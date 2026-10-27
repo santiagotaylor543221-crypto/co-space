@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { Users } from 'lucide-react';
+import WorkspaceImage from '@/components/workspace/workspace-image';
 
 interface Workspace {
   id: string;
@@ -9,6 +11,8 @@ interface Workspace {
   description: string;
   capacity: number;
   pricePerHour: number;
+  imageUrl?: string;
+  type?: 'DESK' | 'MEETING_ROOM' | 'BOOTH';
 }
 
 export default function DashboardPage() {
@@ -33,64 +37,68 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="w-10 h-10 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
+      <div className="flex h-64 items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white" />
       </div>
     );
   }
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="mb-10">
-        <h1 className="text-3xl font-bold text-gray-100 mb-2">Catálogo de Espacios</h1>
-        <p className="text-gray-400">Encuentra y reserva el entorno ideal para tu próxima sesión de trabajo.</p>
-      </div>
+    <div className="py-16">
+      <section className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="mb-3 flex items-center gap-3 text-[9px] uppercase tracking-[0.25em] text-zinc-500">
+            <span className="h-px w-5 bg-zinc-600" />
+            Descubre tu espacio
+          </p>
+          <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-5xl">
+            Espacios Disponibles
+          </h1>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <p className="max-w-[200px] text-[11px] leading-relaxed text-zinc-500 sm:text-right">
+          Selecciona un espacio que se adapte a tu forma de trabajar.
+        </p>
+      </section>
+
+      <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {workspaces.map((workspace) => (
-          <Link
-            href={`/dashboard/${workspace.id}`}
-            key={workspace.id}
-            className="group block"
-          >
-            <div className="h-full p-6 rounded-2xl bg-gray-900/40 border border-gray-800/60 backdrop-blur-xl hover:bg-gray-800/60 hover:border-indigo-500/50 transition-all duration-300 relative overflow-hidden">
-
-              {/* Brillo sutil al hacer hover */}
-              <div className="absolute -inset-px bg-gradient-to-r from-indigo-500/0 via-indigo-500/10 to-indigo-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-              <div className="relative z-10">
-                <div className="flex justify-between items-start mb-4">
-                  <h2 className="text-xl font-bold text-gray-100 group-hover:text-indigo-400 transition-colors">
-                    {workspace.name}
-                  </h2>
-                  <span className="px-3 py-1 text-xs font-semibold bg-gray-800 text-gray-300 rounded-full border border-gray-700">
-                    {workspace.capacity} pax
-                  </span>
-                </div>
-
-                <p className="text-gray-400 text-sm mb-6 line-clamp-2">
-                  {workspace.description}
-                </p>
-
-                <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-800/50">
-                  <div className="text-gray-200">
-                    <span className="text-2xl font-extrabold text-white">${workspace.pricePerHour}</span>
-                    <span className="text-sm text-gray-500"> / hora</span>
-                  </div>
-                  <div className="text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0 duration-300">
-                    Reservar &rarr;
-                  </div>
-                </div>
+          <Link key={workspace.id} href={`/dashboard/${workspace.id}`}>
+            <article className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] transition hover:border-white/20">
+              <div className="relative h-44 w-full bg-zinc-900">
+                <WorkspaceImage
+                  imageUrl={workspace.imageUrl}
+                  type={workspace.type}
+                  alt={workspace.name}
+                  className="h-full w-full object-cover"
+                />
+                <span className="absolute left-3 top-3 rounded-full bg-black/70 px-2.5 py-1 text-[8px] font-medium uppercase tracking-widest text-white">
+                  Disponible
+                </span>
               </div>
 
-            </div>
+              <div className="flex items-start justify-between px-4 py-4">
+                <div>
+                  <h2 className="text-sm font-semibold text-white">{workspace.name}</h2>
+                  <p className="mt-1.5 flex items-center gap-1.5 text-[10px] text-zinc-500">
+                    <Users size={12} />
+                    {workspace.capacity} {workspace.capacity === 1 ? 'persona' : 'personas'}
+                  </p>
+                </div>
+
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-white">{workspace.pricePerHour} €</p>
+                  <p className="mt-1.5 text-[9px] text-zinc-600">/ hora</p>
+                </div>
+              </div>
+            </article>
           </Link>
         ))}
-      </div>
+      </section>
 
       {workspaces.length === 0 && (
-        <div className="text-center py-20 bg-gray-900/20 rounded-2xl border border-gray-800/50 border-dashed">
-          <p className="text-gray-500">No hay espacios disponibles en este momento.</p>
+        <div className="rounded-2xl border border-dashed border-white/10 py-20 text-center">
+          <p className="text-xs text-zinc-500">No hay espacios disponibles en este momento.</p>
         </div>
       )}
     </div>

@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { verifyAccessToken } from '@/utils/auth';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
+import { BookingStatus } from '@prisma/client';
 
 // Validación estricta con Zod para las fechas ISO 8601
 const createBookingSchema = z.object({
@@ -72,10 +73,13 @@ export async function GET(req: NextRequest) {
 
     // Traemos las reservas del usuario junto con la info del workspace
     const userBookings = await prisma.booking.findMany({
-      where: { userId: payload.id as string },
+      where: {
+        userId: payload.id as string,
+        status: BookingStatus.CONFIRMED,
+      },
       include: {
         workspace: {
-          select: { name: true } // Solo traemos el nombre para la UI
+          select: { name: true, imageUrl: true, type: true }
         }
       },
       orderBy: { startTime: 'desc' }

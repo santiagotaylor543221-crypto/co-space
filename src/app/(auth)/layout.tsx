@@ -3,5 +3,9 @@ import type { ReactNode } from "react";
 export default function AuthLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
-  return <>{children}</>;
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[#09090b] px-4 py-10">
+      {children}
+    </div>
+  );
 }

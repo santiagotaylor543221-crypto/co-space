@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowRight, Calendar, Check, ShieldCheck } from 'lucide-react';
+import WorkspaceImage from '@/components/workspace/workspace-image';
 
 interface Workspace {
   id: string;
@@ -12,6 +13,7 @@ interface Workspace {
   capacity: number;
   pricePerHour: number;
   imageUrl?: string;
+  type?: 'DESK' | 'MEETING_ROOM' | 'BOOTH';
   location?: string;
   amenities?: string[];
 }
@@ -22,6 +24,20 @@ const HOURS = Array.from({ length: 15 }, (_, i) => i + 7);
 const formatHour = (hour: number) => `${String(hour).padStart(2, '0')}:00`;
 
 export default function WorkspaceDetailPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-[50vh] items-center justify-center">
+          <p className="text-xs text-zinc-500">Cargando espacio...</p>
+        </main>
+      }
+    >
+      <WorkspaceDetailContent />
+    </Suspense>
+  );
+}
+
+function WorkspaceDetailContent() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
 
@@ -36,21 +52,21 @@ export default function WorkspaceDetailPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    fetchWorkspace();
-  }, [id]);
+    const fetchWorkspace = async () => {
+      try {
+        const res = await fetch(`/api/workspaces/${id}`);
+        if (!res.ok) throw new Error('Error al cargar el espacio');
+        const data = await res.json();
+        setWorkspace(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error al cargar el espacio');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const fetchWorkspace = async () => {
-    try {
-      const res = await fetch(`/api/workspaces/${id}`);
-      if (!res.ok) throw new Error('Error al cargar el espacio');
-      const data = await res.json();
-      setWorkspace(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al cargar el espacio');
-    } finally {
-      setLoading(false);
-    }
-  };
+    void fetchWorkspace();
+  }, [id]);
 
   const handleStartChange = (value: number) => {
     setStartHour(value);
@@ -77,7 +93,7 @@ export default function WorkspaceDetailPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error al reservar');
 
-      router.push('/reservas');
+      router.push('/mis-reservas');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al reservar');
     } finally {
@@ -92,7 +108,7 @@ export default function WorkspaceDetailPage() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#09090b]">
+      <main className="flex min-h-[50vh] items-center justify-center">
         <p className="text-xs text-zinc-500">Cargando espacio...</p>
       </main>
     );
@@ -100,7 +116,7 @@ export default function WorkspaceDetailPage() {
 
   if (!workspace) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#09090b] px-4">
+      <main className="flex min-h-[50vh] items-center justify-center px-4">
         <p role="alert" className="text-xs text-red-400">
           {error || 'Espacio no encontrado'}
         </p>
@@ -112,51 +128,24 @@ export default function WorkspaceDetailPage() {
   const totalPrice = totalHours * workspace.pricePerHour;
 
   return (
-    <div className="min-h-screen bg-[#09090b] px-4 py-4">
-      <div className="mx-auto max-w-5xl">
-        <header className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4 sm:px-6">
-          <Link href="/" className="text-base font-semibold text-white">
-            <span className="text-zinc-400">Co</span>Space
-          </Link>
-
-          <nav className="flex items-center gap-4 text-[11px] text-zinc-300 sm:gap-5">
-            <Link href="/catalog" className="transition hover:text-white">
-              Catálogo
-            </Link>
-            <Link href="/login" className="transition hover:text-white">
-              Login
-            </Link>
-            <div className="flex items-center gap-2 text-[9px] font-semibold tracking-widest">
-              <button type="button" className="text-zinc-500 transition hover:text-white">
-                ES
-              </button>
-              <span className="h-3 w-px bg-white/20" />
-              <button type="button" className="text-white">
-                EN
-              </button>
-            </div>
-          </nav>
-        </header>
-
-        <main className="py-10">
-          <Link
-            href="/catalog"
-            className="mb-6 inline-block text-[9px] text-zinc-500 transition hover:text-white"
-          >
-            ← Volver al catálogo
-          </Link>
+    <div className="py-10">
+      <Link
+        href="/dashboard"
+        className="mb-6 inline-block text-[9px] text-zinc-500 transition hover:text-white"
+      >
+        ← Volver al catálogo
+      </Link>
 
           <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
             {/* Imagen + información */}
             <div>
               <div className="h-64 w-full overflow-hidden rounded-2xl border border-white/10 bg-zinc-900 sm:h-[352px]">
-                {workspace.imageUrl && (
-                  <img
-                    src={workspace.imageUrl}
-                    alt={workspace.name}
-                    className="h-full w-full object-cover"
-                  />
-                )}
+                <WorkspaceImage
+                  imageUrl={workspace.imageUrl}
+                  type={workspace.type}
+                  alt={workspace.name}
+                  className="h-full w-full object-cover"
+                />
               </div>
 
               <section className="mt-8 px-1">
@@ -291,8 +280,6 @@ export default function WorkspaceDetailPage() {
               </form>
             </aside>
           </div>
-        </main>
-      </div>
     </div>
   );
 }

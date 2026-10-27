@@ -4,6 +4,10 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
+import Button from '@/components/ui/button';
+import Card from '@/components/ui/card';
+import FormField from '@/components/ui/form-field';
+import TextInput from '@/components/ui/text-input';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -43,13 +47,8 @@ export default function LoginPage() {
     }
   };
 
-  const inputStyles =
-    'w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-xs text-white placeholder:text-zinc-500 outline-none transition focus:border-white/30';
-
-  const labelStyles = 'mb-2 block text-[10px] font-medium text-zinc-400';
-
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-[#09090b] px-4 py-10">
+    <main className="flex w-full flex-col items-center justify-center">
       <header className="mb-8 text-center">
         <p className="mb-10 text-sm font-semibold text-white">
           <span className="text-zinc-400">Co</span>Space
@@ -65,7 +64,7 @@ export default function LoginPage() {
         </p>
       </header>
 
-      <section className="w-full max-w-sm rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
+      <Card className="w-full max-w-sm rounded-2xl p-5 sm:p-6">
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           {error && (
             <p
@@ -76,44 +75,36 @@ export default function LoginPage() {
             </p>
           )}
 
-          <div>
-            <label htmlFor="email" className={labelStyles}>
-              Correo Electrónico
-            </label>
-            <input
+          <FormField label="Correo Electrónico" htmlFor="email">
+            <TextInput
               id="email"
               type="email"
               placeholder="tu@correo.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className={inputStyles}
             />
-          </div>
+          </FormField>
 
-          <div>
-            <label htmlFor="password" className={labelStyles}>
-              Contraseña
-            </label>
-            <input
+          <FormField label="Contraseña" htmlFor="password">
+            <TextInput
               id="password"
               type="password"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className={inputStyles}
             />
-          </div>
+          </FormField>
 
-          <button
+          <Button
             type="submit"
             disabled={loading}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-white py-3 text-xs font-semibold text-black transition hover:bg-zinc-200 disabled:opacity-50"
+            className="w-full py-3"
           >
             {loading ? 'Iniciando sesión...' : 'Entrar'}
             {!loading && <ArrowRight size={14} />}
-          </button>
+          </Button>
         </form>
 
         <footer className="mt-5 border-t border-white/10 pt-4 text-center text-[11px] text-zinc-500">
@@ -122,7 +113,7 @@ export default function LoginPage() {
             Regístrate
           </Link>
         </footer>
-      </section>
+      </Card>
 
       <Link
         href="/"
