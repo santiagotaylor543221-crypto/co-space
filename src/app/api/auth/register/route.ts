@@ -1,14 +1,28 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
+import { z } from 'zod';
+
+const registerSchema = z.object({
+  name: z.string().trim().min(1),
+  email: z.string().email(),
+  password: z.string().min(1),
+});
 
 export async function POST(req: Request) {
   try {
-    const { name, email, password } = await req.json();
-
-    if (!email || !password || !name) {
-      return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 });
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: 'JSON inválido' }, { status: 400 });
     }
+
+    const parsedData = registerSchema.safeParse(body);
+    if (!parsedData.success) {
+      return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 });
+    }
+    const { name, email, password } = parsedData.data;
 
     // Verificar si el usuario ya existe
     const existingUser = await prisma.user.findUnique({

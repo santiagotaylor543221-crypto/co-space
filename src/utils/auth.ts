@@ -1,4 +1,4 @@
-import { SignJWT, jwtVerify, JWTPayload } from 'jose';
+import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 
 // Tipado estricto exigido por la rúbrica (Cero any)
@@ -9,8 +9,21 @@ export interface TokenPayload {
   [key: string]: unknown;
 }
 
-const getAccessSecret = () => new TextEncoder().encode(process.env.JWT_ACCESS_SECRET);
-const getRefreshSecret = () => new TextEncoder().encode(process.env.JWT_REFRESH_SECRET);
+const getAccessSecret = () => {
+  const secret = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_ACCESS_SECRET is not configured');
+  }
+  return new TextEncoder().encode(secret);
+};
+
+const getRefreshSecret = () => {
+  const secret = process.env.JWT_REFRESH_SECRET;
+  if (!secret) {
+    throw new Error('JWT_REFRESH_SECRET is not configured');
+  }
+  return new TextEncoder().encode(secret);
+};
 
 /**
  * Genera ambos tokens con sus respectivos tiempos de expiración
@@ -38,7 +51,7 @@ export async function verifyAccessToken(token: string): Promise<TokenPayload | n
   try {
     const { payload } = await jwtVerify(token, getAccessSecret());
     return payload as TokenPayload;
-  } catch (error) {
+  } catch {
     return null; // Si expira o es inválido, retorna null para que el middleware actúe
   }
 }
@@ -50,7 +63,7 @@ export async function verifyRefreshToken(token: string): Promise<TokenPayload | 
   try {
     const { payload } = await jwtVerify(token, getRefreshSecret());
     return payload as TokenPayload;
-  } catch (error) {
+  } catch {
     return null;
   }
 }

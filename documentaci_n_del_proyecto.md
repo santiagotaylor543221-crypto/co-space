@@ -23,7 +23,7 @@ Completa los valores de estas variables en `.env`:
 | Variable | Descripción | Valor esperado |
 |----------|-------------|----------------|
 | `DATABASE_URL` | Cadena de conexión a PostgreSQL. | URI de conexión de tu base de datos, con el esquema `public`. En Supabase se obtiene desde *Project Settings > Database > Connection string*. |
-| `JWT_ACCESS_SECRET` | Secreto para firmar el token de acceso. | Secreto aleatorio; puedes generarlo con `openssl rand -base64 32`. |
+| `JWT_ACCESS_SECRET` | Secreto para firmar el token de acceso. | Secreto aleatorio; puedes generarlo con `openssl rand -base64 32`. `JWT_SECRET` se acepta como nombre heredado, pero se recomienda usar `JWT_ACCESS_SECRET`. |
 | `JWT_REFRESH_SECRET` | Secreto para firmar el token de renovación. | Otro secreto aleatorio, distinto del anterior. |
 | `POSTGRES_DB` | Nombre de la base de datos para Docker Compose. | Se define en `.env.example`. |
 | `POSTGRES_USER` | Usuario de PostgreSQL para Docker Compose. | Se define en `.env.example`. |
