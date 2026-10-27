@@ -1,36 +1,113 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CoSpace - Sistema de reservas de coworking
 
-## Getting Started
+CoSpace es una aplicación fullstack desarrollada con Next.js 16 para explorar y reservar espacios de coworking, como escritorios, salas de reuniones y cabinas. Incluye autenticación, gestión de reservas y un panel de administración para gestionar espacios.
 
-First, run the development server:
+## Requisitos previos
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Node.js 20.9 o superior.
+- npm.
+- Una base de datos PostgreSQL local o alojada, por ejemplo, en Supabase.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Configuración
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Clona el repositorio e instala las dependencias:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+   ```bash
+   git clone <URL_DEL_REPOSITORIO>
+   cd co-space
+   npm install
+   ```
 
-## Learn More
+2. Crea el archivo de variables de entorno:
 
-To learn more about Next.js, take a look at the following resources:
+   ```bash
+   cp .env.example .env
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+3. En `.env`, configura `DATABASE_URL` con la URI de tu base de datos PostgreSQL, y define secretos distintos para `JWT_ACCESS_SECRET` y `JWT_REFRESH_SECRET`. Puedes generar cada secreto con:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   ```bash
+   openssl rand -base64 32
+   ```
 
-## Deploy on Vercel
+4. Aplica las migraciones incluidas:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+   ```bash
+   npx prisma migrate dev
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+5. Crea las cuentas y espacios iniciales:
+
+   ```bash
+   npm run seed
+   ```
+
+6. Inicia el servidor de desarrollo:
+
+   ```bash
+   npm run dev
+   ```
+
+Abre [http://localhost:3000](http://localhost:3000) para usar la aplicación.
+
+## Ejecutar con Docker
+
+Necesitas Docker Engine y Docker Compose. Desde la raíz del proyecto:
+
+1. Crea y edita el archivo de entorno:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   Reemplaza los valores de ejemplo por secretos propios. Puedes generar valores aleatorios con `openssl rand -hex 32`; usa valores distintos para `POSTGRES_PASSWORD`, `JWT_ACCESS_SECRET` y `JWT_REFRESH_SECRET`. La contraseña de PostgreSQL debe ser hexadecimal para que pueda usarse directamente en la URI de conexión.
+
+2. Construye e inicia la aplicación y PostgreSQL:
+
+   ```bash
+   docker compose up --build -d
+   ```
+
+   Compose espera a que PostgreSQL esté listo y la aplicación aplica las migraciones antes de iniciar. Abre [http://localhost:3000](http://localhost:3000).
+
+3. (Opcional) Carga las cuentas y espacios iniciales:
+
+   ```bash
+   docker compose exec app npm run seed
+   ```
+
+Los datos de PostgreSQL se conservan en el volumen `postgres_data` al detener los contenedores con `docker compose down`. Para borrar también la base de datos, usa `docker compose down -v`.
+
+## Cuentas de prueba
+
+El seed crea estas cuentas para desarrollo:
+
+| Rol | Correo | Contraseña |
+|-----|--------|------------|
+| Administrador | `admin@coworking.com` | `admin123` |
+| Usuario | `santiago@coworking.com` | `user123` |
+
+No uses estas credenciales en producción. Los espacios iniciales se crean únicamente si la tabla de espacios está vacía.
+
+## Comandos disponibles
+
+- `npm run dev`: inicia el servidor de desarrollo.
+- `npm run build`: compila la aplicación para producción.
+- `npm run start`: inicia la aplicación compilada.
+- `npm run lint`: ejecuta ESLint.
+- `npm run seed`: ejecuta el seed de Prisma.
+
+## Estructura principal
+
+- `src/app/`: páginas, layouts y API de Next.js.
+- `src/components/`: componentes de interfaz.
+- `src/lib/`: cliente de Prisma.
+- `src/services/`: lógica de negocio.
+- `src/utils/`: utilidades de autenticación.
+- `prisma/`: esquema, migraciones y seed de la base de datos.
+
+Para más información sobre la configuración y estructura, consulta [la documentación del proyecto](./documentaci_n_del_proyecto.md).
+
+## Despliegue
+
+La aplicación puede ejecutarse con Docker Compose siguiendo la sección anterior o desplegarse en una plataforma compatible con Next.js, como Vercel. En otros entornos, configura las variables de entorno necesarias y aplica las migraciones antes de ponerla en servicio.

@@ -8,8 +8,10 @@ import Button from '@/components/ui/button';
 import Card from '@/components/ui/card';
 import FormField from '@/components/ui/form-field';
 import TextInput from '@/components/ui/text-input';
+import { useI18n } from '@/lib/i18n';
 
 export default function LoginPage() {
+  const { t } = useI18n();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -54,13 +56,13 @@ export default function LoginPage() {
           <span className="text-zinc-400">Co</span>Space
         </p>
         <p className="mb-2 text-[9px] uppercase tracking-[0.25em] text-zinc-600">
-          Bienvenido a CoSpace
+          {t('Bienvenido a CoSpace')}
         </p>
         <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-          Iniciar sesión
+          {t('Iniciar sesión')}
         </h1>
         <p className="mt-2 text-xs text-zinc-500">
-          Inicia sesión para gestionar tus reservas.
+          {t('Inicia sesión para gestionar tus reservas.')}
         </p>
       </header>
 
@@ -75,7 +77,7 @@ export default function LoginPage() {
             </p>
           )}
 
-          <FormField label="Correo Electrónico" htmlFor="email">
+          <FormField label={t('Correo Electrónico')} htmlFor="email">
             <TextInput
               id="email"
               type="email"
@@ -86,7 +88,7 @@ export default function LoginPage() {
             />
           </FormField>
 
-          <FormField label="Contraseña" htmlFor="password">
+          <FormField label={t('Contraseña')} htmlFor="password">
             <TextInput
               id="password"
               type="password"
@@ -102,15 +104,15 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full py-3"
           >
-            {loading ? 'Iniciando sesión...' : 'Entrar'}
+            {loading ? t('Iniciando sesión...') : t('Entrar')}
             {!loading && <ArrowRight size={14} />}
           </Button>
         </form>
 
         <footer className="mt-5 border-t border-white/10 pt-4 text-center text-[11px] text-zinc-500">
-          ¿No tienes cuenta?{' '}
+          {t('¿No tienes cuenta?')}{' '}
           <Link href="/register" className="font-semibold text-white hover:underline">
-            Regístrate
+            {t('Regístrate')}
           </Link>
         </footer>
       </Card>
@@ -119,7 +121,7 @@ export default function LoginPage() {
         href="/"
         className="mt-6 text-[11px] text-zinc-500 transition hover:text-white"
       >
-        ← Volver al inicio
+        {t('← Volver al inicio')}
       </Link>
     </main>
   );

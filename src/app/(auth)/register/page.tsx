@@ -4,8 +4,10 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowRight, ArrowLeft } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 export default function RegisterPage() {
+  const { t } = useI18n();
   const router = useRouter();
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
   const [error, setError] = useState('');
@@ -31,8 +33,8 @@ export default function RegisterPage() {
 
       // Registro exitoso, lo enviamos al login
       router.push('/login?registered=true');
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? t(err.message) : t('Error al registrarse'));
     } finally {
       setLoading(false);
     }
@@ -58,9 +60,9 @@ export default function RegisterPage() {
 
       {/* Encabezado */}
       <div className="mb-8 text-center">
-        <p className="mb-3 text-[8px] uppercase tracking-[0.3em] text-zinc-600">Únete a CoSpace</p>
-        <h1 className="text-4xl font-semibold tracking-tight text-white">Crear cuenta</h1>
-        <p className="mt-3 text-xs text-zinc-500">Empieza a trabajar a tu manera.</p>
+        <p className="mb-3 text-[8px] uppercase tracking-[0.3em] text-zinc-600">{t('Únete a CoSpace')}</p>
+        <h1 className="text-4xl font-semibold tracking-tight text-white">{t('Crear cuenta')}</h1>
+        <p className="mt-3 text-xs text-zinc-500">{t('Empieza a trabajar a tu manera.')}</p>
       </div>
 
       {/* Tarjeta */}
@@ -74,7 +76,7 @@ export default function RegisterPage() {
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div>
             <label htmlFor="name" className={labelStyles}>
-              Nombre Completo
+              {t('Nombre Completo')}
             </label>
             <input
               id="name"
@@ -89,7 +91,7 @@ export default function RegisterPage() {
 
           <div>
             <label htmlFor="email" className={labelStyles}>
-              Correo Electrónico
+              {t('Correo Electrónico')}
             </label>
             <input
               id="email"
@@ -104,7 +106,7 @@ export default function RegisterPage() {
 
           <div>
             <label htmlFor="password" className={labelStyles}>
-              Contraseña
+              {t('Contraseña')}
             </label>
             <input
               id="password"
@@ -122,15 +124,15 @@ export default function RegisterPage() {
             disabled={loading}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-white py-3.5 text-xs font-semibold text-black transition hover:bg-zinc-200 disabled:opacity-50"
           >
-            {loading ? 'Procesando...' : 'Registrarse'}
+            {loading ? t('Procesando...') : t('Registrarse')}
             {!loading && <ArrowRight size={14} />}
           </button>
         </form>
 
         <div className="mt-5 border-t border-white/10 pt-5 text-center text-[10px] text-zinc-500">
-          ¿Ya tienes cuenta?{' '}
+          {t('¿Ya tienes cuenta?')}{' '}
           <Link href="/login" className="font-semibold text-white transition hover:underline">
-            Inicia sesión
+            {t('Inicia sesión')}
           </Link>
         </div>
       </div>
@@ -140,7 +142,7 @@ export default function RegisterPage() {
         className="mt-8 flex items-center gap-1.5 text-[10px] text-zinc-600 transition hover:text-zinc-400"
       >
         <ArrowLeft size={10} />
-        Volver al inicio
+        {t('Volver al inicio')}
       </Link>
     </div>
   );

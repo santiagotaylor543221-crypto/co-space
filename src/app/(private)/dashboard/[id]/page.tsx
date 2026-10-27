@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowRight, Calendar, Check, ShieldCheck } from 'lucide-react';
 import WorkspaceImage from '@/components/workspace/workspace-image';
+import { useI18n } from '@/lib/i18n';
 
 interface Workspace {
   id: string;
@@ -24,11 +25,13 @@ const HOURS = Array.from({ length: 15 }, (_, i) => i + 7);
 const formatHour = (hour: number) => `${String(hour).padStart(2, '0')}:00`;
 
 export default function WorkspaceDetailPage() {
+  const { t } = useI18n();
+
   return (
     <Suspense
       fallback={
         <main className="flex min-h-[50vh] items-center justify-center">
-          <p className="text-xs text-zinc-500">Cargando espacio...</p>
+          <p className="text-xs text-zinc-500">{t('Cargando espacio...')}</p>
         </main>
       }
     >
@@ -38,6 +41,7 @@ export default function WorkspaceDetailPage() {
 }
 
 function WorkspaceDetailContent() {
+  const { t } = useI18n();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
 
@@ -118,7 +122,7 @@ function WorkspaceDetailContent() {
     return (
       <main className="flex min-h-[50vh] items-center justify-center px-4">
         <p role="alert" className="text-xs text-red-400">
-          {error || 'Espacio no encontrado'}
+          {error || t('Espacio no encontrado')}
         </p>
       </main>
     );
@@ -133,7 +137,7 @@ function WorkspaceDetailContent() {
         href="/dashboard"
         className="mb-6 inline-block text-[9px] text-zinc-500 transition hover:text-white"
       >
-        ← Volver al catálogo
+        {t('← Volver al catálogo')}
       </Link>
 
           <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
@@ -166,7 +170,7 @@ function WorkspaceDetailContent() {
 
                 {workspace.amenities && workspace.amenities.length > 0 && (
                   <div className="mt-8">
-                    <h2 className="text-xs font-semibold text-white">Comodidades</h2>
+                    <h2 className="text-xs font-semibold text-white">{t('Comodidades')}</h2>
                     <ul className="mt-2 grid gap-2 sm:grid-cols-2">
                       {workspace.amenities.map((amenity) => (
                         <li
@@ -188,7 +192,7 @@ function WorkspaceDetailContent() {
               <form onSubmit={handleBooking} className="flex flex-col gap-4">
                 <div className="flex items-center justify-between">
                   <h2 className="text-[8px] uppercase tracking-[0.25em] text-zinc-500">
-                    Reserva tu espacio
+                    {t('Reserva tu espacio')}
                   </h2>
                   <Calendar size={14} className="text-zinc-400" />
                 </div>
@@ -204,7 +208,7 @@ function WorkspaceDetailContent() {
 
                 <div>
                   <label htmlFor="date" className={labelStyles}>
-                    Fecha
+                    {t('Fecha')}
                   </label>
                   <input
                     id="date"
@@ -219,7 +223,7 @@ function WorkspaceDetailContent() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label htmlFor="startHour" className={labelStyles}>
-                      Hora inicio
+                      {t('Hora inicio')}
                     </label>
                     <select
                       id="startHour"
@@ -237,7 +241,7 @@ function WorkspaceDetailContent() {
 
                   <div>
                     <label htmlFor="endHour" className={labelStyles}>
-                      Hora fin
+                      {t('Hora fin')}
                     </label>
                     <select
                       id="endHour"
@@ -256,9 +260,9 @@ function WorkspaceDetailContent() {
 
                 <div className="flex items-end justify-between border-t border-white/10 pt-4">
                   <div>
-                    <p className="text-[9px] text-zinc-400">Precio Total</p>
+                    <p className="text-[9px] text-zinc-400">{t('Precio Total')}</p>
                     <p className="mt-1 text-[8px] text-zinc-600">
-                      {totalHours} {totalHours === 1 ? 'hora' : 'horas'} × {workspace.pricePerHour} €
+                      {totalHours} {t(totalHours === 1 ? 'hora' : 'horas')} × {workspace.pricePerHour} €
                     </p>
                   </div>
                   <p className="text-2xl font-semibold text-white">{totalPrice} €</p>
@@ -269,13 +273,13 @@ function WorkspaceDetailContent() {
                   disabled={submitting}
                   className="flex w-full items-center justify-center gap-2 rounded-lg bg-white py-3 text-xs font-semibold text-black transition hover:bg-zinc-200 disabled:opacity-50"
                 >
-                  {submitting ? 'Reservando...' : 'Confirmar Reserva'}
+                  {submitting ? t('Reservando...') : t('Confirmar Reserva')}
                   {!submitting && <ArrowRight size={14} />}
                 </button>
 
                 <p className="flex items-center justify-center gap-1.5 text-[8px] text-zinc-600">
                   <ShieldCheck size={11} />
-                  Pago seguro · Cancelación flexible
+                  {t('Pago seguro · Cancelación flexible')}
                 </p>
               </form>
             </aside>

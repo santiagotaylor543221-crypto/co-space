@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Pencil, Plus, RotateCcw, Trash2, X } from 'lucide-react';
 import Button from '@/components/ui/button';
 import Card from '@/components/ui/card';
+import { useI18n } from '@/lib/i18n';
 
 type WorkspaceType = 'DESK' | 'MEETING_ROOM' | 'BOOTH';
 type Section = 'bookings' | 'workspaces';
@@ -108,6 +109,7 @@ async function fetchAdminData() {
 }
 
 export default function AdminPanelPage() {
+  const { t, language } = useI18n();
   const [section, setSection] = useState<Section>('bookings');
   const [bookings, setBookings] = useState<AdminBooking[]>([]);
   const [workspaces, setWorkspaces] = useState<AdminWorkspace[]>([]);
@@ -307,7 +309,10 @@ export default function AdminPanelPage() {
 
   const toggleWorkspace = async (workspace: AdminWorkspace) => {
     const action = workspace.isActive ? 'archivar' : 'reactivar';
-    if (workspace.isActive && !confirm(`¿Quieres archivar “${workspace.name}”?`)) return;
+    if (
+      workspace.isActive &&
+      !confirm(t('¿Quieres archivar “{name}”?').replace('{name}', workspace.name))
+    ) return;
 
     setBusyId(workspace.id);
     try {
@@ -335,7 +340,7 @@ export default function AdminPanelPage() {
   };
 
   if (loading) {
-    return <div className="p-10 text-gray-400">Cargando datos del sistema...</div>;
+    return <div className="p-10 text-gray-400">{t('Cargando datos del sistema...')}</div>;
   }
 
   return (
@@ -344,13 +349,13 @@ export default function AdminPanelPage() {
         <div>
           <div className="mb-3 flex items-center gap-3">
             <span className="h-px w-6 bg-gray-600" />
-            <span className="text-[10px] tracking-[0.25em] text-gray-500">PANEL DE CONTROL</span>
+            <span className="text-[10px] tracking-[0.25em] text-gray-500">{t('PANEL DE CONTROL')}</span>
           </div>
           <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">
-            Administración
+            {t('Administración')}
           </h1>
           <p className="mt-2 text-xs text-gray-500">
-            Gestiona reservas, usuarios y espacios de trabajo.
+            {t('Gestiona reservas, usuarios y espacios de trabajo.')}
           </p>
         </div>
         <div className="flex gap-2">
@@ -360,7 +365,7 @@ export default function AdminPanelPage() {
             className="px-4 py-2.5"
             onClick={() => setSection('bookings')}
           >
-            Reservas
+            {t('Reservas')}
           </Button>
           <Button
             type="button"
@@ -368,29 +373,29 @@ export default function AdminPanelPage() {
             className="px-4 py-2.5"
             onClick={() => setSection('workspaces')}
           >
-            Espacios
+            {t('Espacios')}
           </Button>
         </div>
       </header>
 
       {error && (
         <p role="alert" className="mb-5 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-xs text-red-400">
-          {error}
+          {t(error)}
           <button type="button" className="ml-3 underline" onClick={() => setError('')}>
-            Cerrar
+            {t('Cerrar')}
           </button>
         </p>
       )}
       {notice && (
         <p role="status" className="mb-5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-xs text-emerald-300">
-          {notice}
+          {t(notice)}
         </p>
       )}
 
       {section === 'bookings' ? (
         <section>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold text-white">Reservas confirmadas</h2>
+            <h2 className="text-sm font-semibold text-white">{t('Reservas confirmadas')}</h2>
             <Button
               type="button"
               onClick={openNewBookingForm}
@@ -398,7 +403,7 @@ export default function AdminPanelPage() {
               className="px-4 py-2.5"
             >
               <Plus size={14} />
-              Nueva reserva
+              {t('Nueva reserva')}
             </Button>
           </div>
 
@@ -413,8 +418,8 @@ export default function AdminPanelPage() {
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Buscar usuario o espacio..."
-                aria-label="Buscar reservas"
+                placeholder={t('Buscar usuario o espacio...')}
+                aria-label={t('Buscar reservas')}
                 className={`${inputClass} sm:w-64`}
               />
             </div>
@@ -422,12 +427,12 @@ export default function AdminPanelPage() {
               <table className="w-full border-collapse text-left">
                 <thead>
                   <tr className="text-[9px] tracking-[0.2em] text-gray-600">
-                    <th className="px-5 py-3 font-medium">USUARIO</th>
-                    <th className="px-5 py-3 font-medium">ESPACIO</th>
-                    <th className="px-5 py-3 font-medium">INICIO</th>
-                    <th className="px-5 py-3 font-medium">FIN</th>
-                    <th className="px-5 py-3 font-medium">TOTAL</th>
-                    <th className="px-5 py-3 text-right font-medium">ACCIONES</th>
+                    <th className="px-5 py-3 font-medium">{t('USUARIO')}</th>
+                    <th className="px-5 py-3 font-medium">{t('ESPACIO')}</th>
+                    <th className="px-5 py-3 font-medium">{t('INICIO')}</th>
+                    <th className="px-5 py-3 font-medium">{t('FIN')}</th>
+                    <th className="px-5 py-3 font-medium">{t('TOTAL')}</th>
+                    <th className="px-5 py-3 text-right font-medium">{t('ACCIONES')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -439,10 +444,10 @@ export default function AdminPanelPage() {
                       </td>
                       <td className="px-5 py-4 text-xs text-gray-300">{booking.workspace.name}</td>
                       <td className="px-5 py-4 text-xs text-gray-400">
-                        {new Date(booking.startTime).toLocaleString()}
+                        {new Date(booking.startTime).toLocaleString(language)}
                       </td>
                       <td className="px-5 py-4 text-xs text-gray-400">
-                        {new Date(booking.endTime).toLocaleString()}
+                        {new Date(booking.endTime).toLocaleString(language)}
                       </td>
                       <td className="px-5 py-4 text-xs text-gray-300">
                         {booking.totalPrice.toLocaleString()} €
@@ -456,7 +461,7 @@ export default function AdminPanelPage() {
                             className="px-3 py-2 text-[10px]"
                           >
                             <Pencil size={12} />
-                            Editar
+                            {t('Editar')}
                           </Button>
                           <Button
                             type="button"
@@ -465,7 +470,7 @@ export default function AdminPanelPage() {
                             disabled={busyId === booking.id}
                             className="px-2 py-2 text-[10px]"
                           >
-                            {busyId === booking.id ? 'Cancelando...' : 'Cancelar'}
+                            {busyId === booking.id ? t('Cancelando...') : t('Cancelar')}
                           </Button>
                         </div>
                       </td>
@@ -475,8 +480,8 @@ export default function AdminPanelPage() {
                     <tr>
                       <td colSpan={6} className="px-5 py-12 text-center text-xs text-gray-600">
                         {bookings.length === 0
-                          ? 'No hay reservas confirmadas.'
-                          : 'No hay reservas que coincidan con la búsqueda.'}
+                          ? t('No hay reservas confirmadas.')
+                          : t('No hay reservas que coincidan con la búsqueda.')}
                       </td>
                     </tr>
                   )}
@@ -489,14 +494,14 @@ export default function AdminPanelPage() {
         <section>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="text-sm font-semibold text-white">Espacios de trabajo</h2>
+              <h2 className="text-sm font-semibold text-white">{t('Espacios de trabajo')}</h2>
               <p className="mt-1 text-[10px] text-gray-500">
-                Los espacios archivados conservan su historial de reservas.
+                {t('Los espacios archivados conservan su historial de reservas.')}
               </p>
             </div>
             <Button type="button" onClick={openNewWorkspaceForm} className="px-4 py-2.5">
               <Plus size={14} />
-              Nuevo espacio
+              {t('Nuevo espacio')}
             </Button>
           </div>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -505,19 +510,19 @@ export default function AdminPanelPage() {
                 <div className="mb-4 flex items-start justify-between gap-3">
                   <div>
                     <span className={`text-[9px] uppercase tracking-widest ${workspace.isActive ? 'text-emerald-400' : 'text-zinc-500'}`}>
-                      {workspace.isActive ? 'Activo' : 'Archivado'}
+                      {workspace.isActive ? t('Activo') : t('Archivado')}
                     </span>
                     <h3 className="mt-1 text-sm font-semibold text-white">{workspace.name}</h3>
                   </div>
                   <span className="rounded border border-white/10 px-2 py-1 text-[9px] text-zinc-400">
-                    {workspaceTypeLabels[workspace.type]}
+                    {t(workspaceTypeLabels[workspace.type])}
                   </span>
                 </div>
                 <p className="mb-4 line-clamp-2 min-h-8 text-[11px] leading-relaxed text-zinc-500">
                   {workspace.description}
                 </p>
                 <div className="mb-5 flex items-center justify-between text-[10px] text-zinc-400">
-                  <span>{workspace.capacity} {workspace.capacity === 1 ? 'persona' : 'personas'}</span>
+                  <span>{workspace.capacity} {t(workspace.capacity === 1 ? 'persona' : 'personas')}</span>
                   <span>{workspace.pricePerHour.toLocaleString()} € / hora</span>
                 </div>
                 <div className="mt-auto flex gap-2 border-t border-white/5 pt-4">
@@ -528,7 +533,7 @@ export default function AdminPanelPage() {
                     className="flex-1 py-2"
                   >
                     <Pencil size={12} />
-                    Editar
+                    {t('Editar')}
                   </Button>
                   <Button
                     type="button"
@@ -538,14 +543,14 @@ export default function AdminPanelPage() {
                     className="flex-1 py-2"
                   >
                     {workspace.isActive ? <Trash2 size={12} /> : <RotateCcw size={12} />}
-                    {workspace.isActive ? 'Archivar' : 'Reactivar'}
+                    {workspace.isActive ? t('Archivar') : t('Reactivar')}
                   </Button>
                 </div>
               </Card>
             ))}
             {workspaces.length === 0 && (
               <Card className="col-span-full py-16 text-center text-xs text-zinc-500">
-                No hay espacios. Crea el primero para que aparezca en el catálogo.
+                {t('No hay espacios. Crea el primero para que aparezca en el catálogo.')}
               </Card>
             )}
           </div>
@@ -557,48 +562,48 @@ export default function AdminPanelPage() {
           <Card className="my-auto w-full max-w-xl rounded-2xl bg-[#111113] p-5 shadow-2xl sm:p-6">
             <div className="mb-5 flex items-center justify-between">
               <h2 className="text-base font-semibold text-white">
-                {editingBookingId ? 'Editar reserva' : 'Crear reserva'}
+                {editingBookingId ? t('Editar reserva') : t('Crear reserva')}
               </h2>
-              <button type="button" aria-label="Cerrar formulario" onClick={() => setBookingForm(null)}>
+              <button type="button" aria-label={t('Cerrar formulario')} onClick={() => setBookingForm(null)}>
                 <X size={18} className="text-zinc-400 hover:text-white" />
               </button>
             </div>
             <form onSubmit={saveBooking} className="grid gap-4 sm:grid-cols-2">
               {formError && (
                 <p role="alert" className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-400 sm:col-span-2">
-                  {formError}
+                  {t(formError)}
                 </p>
               )}
               <label className="sm:col-span-2">
-                <span className={labelClass}>Usuario</span>
+                <span className={labelClass}>{t('Usuario')}</span>
                 <select
                   required
                   value={bookingForm.userId}
                   onChange={(event) => setBookingForm({ ...bookingForm, userId: event.target.value })}
                   className={inputClass}
                 >
-                  <option value="">Selecciona un usuario</option>
+                  <option value="">{t('Selecciona un usuario')}</option>
                   {users.map((user) => (
                     <option key={user.id} value={user.id}>{user.name} — {user.email}</option>
                   ))}
                 </select>
               </label>
               <label className="sm:col-span-2">
-                <span className={labelClass}>Espacio</span>
+                <span className={labelClass}>{t('Espacio')}</span>
                 <select
                   required
                   value={bookingForm.workspaceId}
                   onChange={(event) => setBookingForm({ ...bookingForm, workspaceId: event.target.value })}
                   className={inputClass}
                 >
-                  <option value="">Selecciona un espacio</option>
+                  <option value="">{t('Selecciona un espacio')}</option>
                   {workspaces.filter((workspace) => workspace.isActive).map((workspace) => (
                     <option key={workspace.id} value={workspace.id}>{workspace.name}</option>
                   ))}
                 </select>
               </label>
               <label>
-                <span className={labelClass}>Inicio</span>
+                <span className={labelClass}>{t('Inicio')}</span>
                 <input
                   required
                   type="datetime-local"
@@ -608,7 +613,7 @@ export default function AdminPanelPage() {
                 />
               </label>
               <label>
-                <span className={labelClass}>Fin</span>
+                <span className={labelClass}>{t('Fin')}</span>
                 <input
                   required
                   type="datetime-local"
@@ -618,14 +623,14 @@ export default function AdminPanelPage() {
                 />
               </label>
               <p className="text-[10px] leading-relaxed text-zinc-500 sm:col-span-2">
-                Las reservas deben durar entre 1 y 4 horas, dentro del horario 07:00–21:00 y con hasta 30 días de anticipación. Se validan los solapamientos y el límite de reservas del usuario.
+                {t('Las reservas deben durar entre 1 y 4 horas, dentro del horario 07:00–21:00 y con hasta 30 días de anticipación. Se validan los solapamientos y el límite de reservas del usuario.')}
               </p>
               <div className="flex justify-end gap-2 sm:col-span-2">
                 <Button type="button" variant="secondary" onClick={() => setBookingForm(null)} className="px-4 py-2.5">
-                  Cancelar
+                  {t('Cancelar')}
                 </Button>
                 <Button type="submit" disabled={saving} className="px-4 py-2.5">
-                  {saving ? 'Guardando...' : editingBookingId ? 'Guardar cambios' : 'Crear reserva'}
+                  {saving ? t('Guardando...') : editingBookingId ? t('Guardar cambios') : t('Crear reserva')}
                 </Button>
               </div>
             </form>
@@ -638,52 +643,52 @@ export default function AdminPanelPage() {
           <Card className="my-auto w-full max-w-xl rounded-2xl bg-[#111113] p-5 shadow-2xl sm:p-6">
             <div className="mb-5 flex items-center justify-between">
               <h2 className="text-base font-semibold text-white">
-                {editingWorkspaceId ? 'Editar espacio' : 'Crear espacio'}
+                {editingWorkspaceId ? t('Editar espacio') : t('Crear espacio')}
               </h2>
-              <button type="button" aria-label="Cerrar formulario" onClick={() => setWorkspaceForm(null)}>
+              <button type="button" aria-label={t('Cerrar formulario')} onClick={() => setWorkspaceForm(null)}>
                 <X size={18} className="text-zinc-400 hover:text-white" />
               </button>
             </div>
             <form onSubmit={saveWorkspace} className="grid gap-4 sm:grid-cols-2">
               {formError && (
                 <p role="alert" className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-400 sm:col-span-2">
-                  {formError}
+                  {t(formError)}
                 </p>
               )}
               <label className="sm:col-span-2">
-                <span className={labelClass}>Nombre</span>
+                <span className={labelClass}>{t('Nombre')}</span>
                 <input required value={workspaceForm.name} onChange={(event) => setWorkspaceForm({ ...workspaceForm, name: event.target.value })} className={inputClass} />
               </label>
               <label className="sm:col-span-2">
-                <span className={labelClass}>Descripción</span>
+                <span className={labelClass}>{t('Descripción')}</span>
                 <textarea required rows={3} value={workspaceForm.description} onChange={(event) => setWorkspaceForm({ ...workspaceForm, description: event.target.value })} className={inputClass} />
               </label>
               <label>
-                <span className={labelClass}>Tipo</span>
+                <span className={labelClass}>{t('Tipo')}</span>
                 <select value={workspaceForm.type} onChange={(event) => setWorkspaceForm({ ...workspaceForm, type: event.target.value as WorkspaceType })} className={inputClass}>
                   {Object.entries(workspaceTypeLabels).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
+                    <option key={value} value={value}>{t(label)}</option>
                   ))}
                 </select>
               </label>
               <label>
-                <span className={labelClass}>Capacidad</span>
+                <span className={labelClass}>{t('Capacidad')}</span>
                 <input required min="1" type="number" value={workspaceForm.capacity} onChange={(event) => setWorkspaceForm({ ...workspaceForm, capacity: event.target.value })} className={inputClass} />
               </label>
               <label>
-                <span className={labelClass}>Precio por hora (€)</span>
+                <span className={labelClass}>{t('Precio por hora (€)')}</span>
                 <input required min="0.01" step="0.01" type="number" value={workspaceForm.pricePerHour} onChange={(event) => setWorkspaceForm({ ...workspaceForm, pricePerHour: event.target.value })} className={inputClass} />
               </label>
               <label>
-                <span className={labelClass}>Ruta de imagen</span>
+                <span className={labelClass}>{t('Ruta de imagen')}</span>
                 <input required value={workspaceForm.imageUrl} onChange={(event) => setWorkspaceForm({ ...workspaceForm, imageUrl: event.target.value })} placeholder="/images/desk-1.svg" className={inputClass} />
               </label>
               <div className="flex justify-end gap-2 sm:col-span-2">
                 <Button type="button" variant="secondary" onClick={() => setWorkspaceForm(null)} className="px-4 py-2.5">
-                  Cancelar
+                  {t('Cancelar')}
                 </Button>
                 <Button type="submit" disabled={saving} className="px-4 py-2.5">
-                  {saving ? 'Guardando...' : editingWorkspaceId ? 'Guardar cambios' : 'Crear espacio'}
+                  {saving ? t('Guardando...') : editingWorkspaceId ? t('Guardar cambios') : t('Crear espacio')}
                 </Button>
               </div>
             </form>
