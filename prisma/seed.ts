@@ -43,7 +43,7 @@ async function main() {
           type: SpaceType.DESK,
           capacity: 1,
           pricePerHour: 10000,
-          imageUrl: '/images/desk-1.jpg',
+          imageUrl: '/images/desk-1.svg',
           isActive: true,
         },
         {
@@ -52,7 +52,7 @@ async function main() {
           type: SpaceType.MEETING_ROOM,
           capacity: 6,
           pricePerHour: 45000,
-          imageUrl: '/images/meeting-1.jpg',
+          imageUrl: '/images/meeting-1.svg',
           isActive: true,
         },
         {
@@ -61,7 +61,7 @@ async function main() {
           type: SpaceType.BOOTH,
           capacity: 1,
           pricePerHour: 15000,
-          imageUrl: '/images/booth-1.jpg',
+          imageUrl: '/images/booth-1.svg',
           isActive: true,
         },
       ],

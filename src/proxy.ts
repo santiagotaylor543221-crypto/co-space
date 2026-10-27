@@ -6,7 +6,10 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // 1. Definir qué rutas están protegidas
-  const isPrivatePath = pathname.startsWith('/dashboard') || pathname.startsWith('/api/bookings');
+  const isPrivatePath =
+    pathname.startsWith('/dashboard') ||
+    pathname.startsWith('/mis-reservas') ||
+    pathname.startsWith('/api/bookings');
   const isAdminPath = pathname.startsWith('/admin') || pathname.startsWith('/api/admin');
 
   // Si es ruta pública, pasa directo
@@ -47,13 +50,14 @@ function handleUnauthorized(request: NextRequest) {
     return NextResponse.json({ error: 'No autorizado. Inicia sesión.' }, { status: 401 });
   }
   // Redirigir al login si entra desde la interfaz web
-  return NextResponse.redirect(new URL('/auth/login', request.url));
+  return NextResponse.redirect(new URL('/login', request.url));
 }
 
 // 6. Configurar en qué rutas se dispara el proxy para ahorrar recursos
 export const config = {
   matcher: [
     '/dashboard/:path*',
+    '/mis-reservas/:path*',
     '/admin/:path*',
     '/api/bookings/:path*',
     '/api/admin/:path*'
