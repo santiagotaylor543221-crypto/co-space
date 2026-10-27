@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Calendar, Clock, Trash2, MapPin } from 'lucide-react';
+import { Calendar, Clock, Trash2 } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 interface Booking {
   id: string;
@@ -14,30 +15,31 @@ interface Booking {
 }
 
 export default function MisReservasPage() {
+  const { t, language } = useI18n();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [cancelingId, setCancelingId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchBookings();
-  }, []);
+    const fetchBookings = async () => {
+      try {
+        const res = await fetch('/api/bookings');
+        if (!res.ok) throw new Error('Error al cargar las reservas');
+        const data = await res.json();
+        setBookings(data);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? t(err.message) : t('Error al cargar las reservas'));
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const fetchBookings = async () => {
-    try {
-      const res = await fetch('/api/bookings');
-      if (!res.ok) throw new Error('Error al cargar las reservas');
-      const data = await res.json();
-      setBookings(data);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+    void fetchBookings();
+  }, [t]);
 
   const handleCancelBooking = async (bookingId: string) => {
-    if (!confirm('¿Estás seguro de que deseas cancelar esta reserva?')) return;
+    if (!confirm(t('¿Estás seguro de que deseas cancelar esta reserva?'))) return;
     
     setCancelingId(bookingId);
     try {
@@ -51,8 +53,8 @@ export default function MisReservasPage() {
       }
 
       setBookings((prev) => prev.filter((b) => b.id !== bookingId));
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err: unknown) {
+      alert(err instanceof Error ? t(err.message) : t('Error al cancelar la reserva'));
     } finally {
       setCancelingId(null);
     }
@@ -72,14 +74,14 @@ export default function MisReservasPage() {
         <div>
           <p className="mb-3 flex items-center gap-3 text-[9px] uppercase tracking-[0.25em] text-zinc-500">
             <span className="h-px w-5 bg-zinc-600" />
-            Panel Personal
+            {t('Panel Personal')}
           </p>
           <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-5xl">
-            Mis Reservas
+            {t('Mis Reservas')}
           </h1>
         </div>
         <p className="max-w-[200px] text-[11px] leading-relaxed text-zinc-500 sm:text-right">
-          Gestiona tus próximos espacios de trabajo.
+          {t('Gestiona tus próximos espacios de trabajo.')}
         </p>
       </section>
 
@@ -92,12 +94,12 @@ export default function MisReservasPage() {
       {bookings.length === 0 && !error ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 py-20 text-center">
           <Calendar className="mb-4 text-zinc-600" size={32} />
-          <p className="mb-4 text-sm text-zinc-400">No tienes reservas activas en este momento.</p>
+          <p className="mb-4 text-sm text-zinc-400">{t('No tienes reservas activas en este momento.')}</p>
           <Link 
             href="/dashboard" 
             className="rounded-lg bg-white px-5 py-2 text-xs font-semibold text-black transition hover:bg-zinc-200"
           >
-            Explorar espacios
+            {t('Explorar espacios')}
           </Link>
         </div>
       ) : (
@@ -117,13 +119,13 @@ export default function MisReservasPage() {
                   <div className="space-y-3">
                     <div className="flex items-center gap-3 text-xs text-zinc-400">
                       <Calendar size={14} className="text-zinc-500" />
-                      <span>{startDate.toLocaleDateString()}</span>
+                      <span>{startDate.toLocaleDateString(language)}</span>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-zinc-400">
                       <Clock size={14} className="text-zinc-500" />
                       <span>
-                        {startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 
-                        {endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {startDate.toLocaleTimeString(language, { hour: '2-digit', minute: '2-digit' })} -
+                        {endDate.toLocaleTimeString(language, { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
                   </div>
@@ -136,7 +138,7 @@ export default function MisReservasPage() {
                     className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 py-2.5 text-xs font-medium text-red-400 transition hover:bg-red-500/20 disabled:opacity-50"
                   >
                     <Trash2 size={14} />
-                    {cancelingId === booking.id ? 'Cancelando...' : 'Cancelar reserva'}
+                    {cancelingId === booking.id ? t('Cancelando...') : t('Cancelar reserva')}
                   </button>
                 </div>
               </article>

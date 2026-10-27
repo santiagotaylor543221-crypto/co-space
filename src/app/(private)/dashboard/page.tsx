@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Users } from 'lucide-react';
 import WorkspaceImage from '@/components/workspace/workspace-image';
+import { useI18n } from '@/lib/i18n';
 
 interface Workspace {
   id: string;
@@ -16,6 +17,7 @@ interface Workspace {
 }
 
 export default function DashboardPage() {
+  const { t } = useI18n();
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -49,15 +51,15 @@ export default function DashboardPage() {
         <div>
           <p className="mb-3 flex items-center gap-3 text-[9px] uppercase tracking-[0.25em] text-zinc-500">
             <span className="h-px w-5 bg-zinc-600" />
-            Descubre tu espacio
+            {t('Descubre tu espacio')}
           </p>
           <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-5xl">
-            Espacios Disponibles
+            {t('Espacios Disponibles')}
           </h1>
         </div>
 
         <p className="max-w-[200px] text-[11px] leading-relaxed text-zinc-500 sm:text-right">
-          Selecciona un espacio que se adapte a tu forma de trabajar.
+          {t('Selecciona un espacio que se adapte a tu forma de trabajar.')}
         </p>
       </section>
 
@@ -73,7 +75,7 @@ export default function DashboardPage() {
                   className="h-full w-full object-cover"
                 />
                 <span className="absolute left-3 top-3 rounded-full bg-black/70 px-2.5 py-1 text-[8px] font-medium uppercase tracking-widest text-white">
-                  Disponible
+                  {t('Disponible')}
                 </span>
               </div>
 
@@ -82,13 +84,13 @@ export default function DashboardPage() {
                   <h2 className="text-sm font-semibold text-white">{workspace.name}</h2>
                   <p className="mt-1.5 flex items-center gap-1.5 text-[10px] text-zinc-500">
                     <Users size={12} />
-                    {workspace.capacity} {workspace.capacity === 1 ? 'persona' : 'personas'}
+                    {workspace.capacity} {t(workspace.capacity === 1 ? 'persona' : 'personas')}
                   </p>
                 </div>
 
                 <div className="text-right">
                   <p className="text-sm font-semibold text-white">{workspace.pricePerHour} €</p>
-                  <p className="mt-1.5 text-[9px] text-zinc-600">/ hora</p>
+                  <p className="mt-1.5 text-[9px] text-zinc-600">{t('/ hora')}</p>
                 </div>
               </div>
             </article>
@@ -98,7 +100,7 @@ export default function DashboardPage() {
 
       {workspaces.length === 0 && (
         <div className="rounded-2xl border border-dashed border-white/10 py-20 text-center">
-          <p className="text-xs text-zinc-500">No hay espacios disponibles en este momento.</p>
+          <p className="text-xs text-zinc-500">{t('No hay espacios disponibles en este momento.')}</p>
         </div>
       )}
     </div>
