@@ -12,7 +12,13 @@ const loginSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: 'JSON inválido' }, { status: 400 });
+    }
+
     const parsedData = loginSchema.safeParse(body);
 
     if (!parsedData.success) {

@@ -24,7 +24,7 @@ CoSpace es una aplicación fullstack desarrollada con Next.js 16 para explorar y
    cp .env.example .env
    ```
 
-3. En `.env`, configura `DATABASE_URL` con la URI de tu base de datos PostgreSQL, y define secretos distintos para `JWT_ACCESS_SECRET` y `JWT_REFRESH_SECRET`. Puedes generar cada secreto con:
+3. En `.env`, configura `DATABASE_URL` con la URI de tu base de datos PostgreSQL, y define secretos distintos para `JWT_ACCESS_SECRET` y `JWT_REFRESH_SECRET`. `JWT_SECRET` se acepta como nombre heredado para el secreto de acceso; se recomienda usar `JWT_ACCESS_SECRET`. Puedes generar cada secreto con:
 
    ```bash
    openssl rand -base64 32
