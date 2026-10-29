@@ -13,7 +13,7 @@ CoSpace es una aplicación fullstack desarrollada con Next.js 16 para explorar y
 1. Clona el repositorio e instala las dependencias:
 
    ```bash
-   git clone <URL_DEL_REPOSITORIO>
+   git clone https://github.com/santiagotaylor543221-crypto/co-space.git
    cd co-space
    npm install
    ```
