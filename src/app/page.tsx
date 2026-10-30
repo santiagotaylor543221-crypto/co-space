@@ -1,87 +1,54 @@
-"use client";
+import Navbar from "@/components/landing/Navbar";
+import Hero from "@/components/landing/Hero";
+import Capabilities from "@/components/landing/Capabilities";
+import HowItWorks from "@/components/landing/HowItWorks";
+import SecuritySection from "@/components/landing/SecuritySection";
+import UnderTheHood from "@/components/landing/UnderTheHood";
+import MetricsSection from "@/components/landing/MetricsSection";
+import TestimonialsSection from "@/components/landing/TestimonialsSection";
+import PricingSection from "@/components/landing/PricingSection";
+import FinalCta from "@/components/landing/FinalCta";
+import Footer from "@/components/landing/Footer";
 
-import Link from 'next/link';
-import { ArrowRight, Calendar, CheckCircle2, Clock } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
-import Card from '@/components/ui/card';
-import LanguageSwitcher from '@/components/layout/language-switcher';
-import { useI18n } from '@/lib/i18n';
-
-interface Feature {
-  title: string;
-  desc: string;
-  icon: LucideIcon;
-}
-
-const features: Feature[] = [
-  { title: 'Horario amplio', desc: 'De 7:00 a 21:00', icon: Clock },
-  { title: 'A tu medida', desc: 'Reservas de 1 a 4 horas', icon: Calendar },
-  { title: 'Sin esperas', desc: 'Gestión inmediata', icon: CheckCircle2 },
-];
-
+// Landing page principal de co-space ensamblada de forma limpia y modular
 export default function LandingPage() {
-  const { t } = useI18n();
-
   return (
-    <main className="relative">
-      <div className="absolute right-0 top-4">
-        <LanguageSwitcher />
-      </div>
-      <section className="flex min-h-[70vh] flex-col items-center justify-center py-20 text-center">
-        <p className="mb-6 flex items-center gap-3 text-[9px] uppercase tracking-[0.25em] text-zinc-500">
-          <span className="h-px w-5 bg-zinc-600" />
-          {t('Espacios que trabajan contigo')}
-        </p>
+    <div className="min-h-screen bg-background text-ink flex flex-col font-body antialiased">
+      {/* 1. Navbar fija */}
+      <Navbar />
 
-        <h1 className="max-w-2xl text-4xl font-semibold leading-[1.05] tracking-tight sm:text-6xl">
-          {t('Encuentra tu lugar en')} <span className="text-zinc-500">CoSpace</span>
-        </h1>
+      {/* Contenido principal */}
+      <main className="flex-1">
+        {/* 2. Hero con titular masivo y cinta en movimiento */}
+        <Hero />
 
-        <p className="mt-6 max-w-md text-xs leading-relaxed text-zinc-400 sm:text-sm">
-          {t('Reserva espacios excepcionales para trabajar, crear y conectar. Sin complicaciones.')}
-        </p>
+        {/* 3. Capacidades numeradas 01-04 */}
+        <Capabilities />
 
-        <Link
-          href="/dashboard"
-          className="mt-8 flex items-center gap-2 rounded-lg bg-white px-5 py-3 text-xs font-semibold text-black transition hover:bg-zinc-200"
-        >
-          {t('Explorar Espacios')}
-          <ArrowRight size={14} />
-        </Link>
+        {/* 4. Cómo funciona (I, II, III) con mock decorativo */}
+        <HowItWorks />
 
-        <p className="mt-24 flex items-center gap-3 text-[8px] uppercase tracking-[0.25em] text-zinc-600">
-          {t('Descubre más')}
-          <span className="h-px w-10 bg-zinc-700" />
-        </p>
-      </section>
+        {/* 5. Seguridad en el borde */}
+        <SecuritySection />
 
-      <section className="pb-16">
-        <h2 className="mb-4 text-[8px] uppercase tracking-[0.25em] text-zinc-600">
-          {t('Pensado para ti')}
-        </h2>
+        {/* 6. Bajo el capó (ADN técnico y tarjeta de código estática) */}
+        <UnderTheHood />
 
-        <div className="grid gap-4 sm:grid-cols-3">
-          {features.map((feature) => (
-            <FeatureCard key={feature.title} {...feature} />
-          ))}
-        </div>
-      </section>
-    </main>
-  );
-}
+        {/* 7. Métricas ilustrativas */}
+        <MetricsSection />
 
-function FeatureCard({ title, desc, icon: Icon }: Feature) {
-  const { t } = useI18n();
+        {/* 8. Testimonios con navegación simple */}
+        <TestimonialsSection />
 
-  return (
-    <Card className="flex h-36 flex-col justify-between p-5 transition hover:border-white/20 sm:h-[146px]">
-      <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 text-zinc-300">
-        <Icon size={13} />
-      </span>
-      <div>
-        <h3 className="text-xs font-semibold text-white">{t(title)}</h3>
-        <p className="mt-1 text-[10px] text-zinc-500">{t(desc)}</p>
-      </div>
-    </Card>
+        {/* 9. Planes con toggle mensual/anual */}
+        <PricingSection />
+
+        {/* 10. CTA final en bloque oscuro */}
+        <FinalCta />
+      </main>
+
+      {/* 11. Footer con enlaces y derechos */}
+      <Footer />
+    </div>
   );
 }

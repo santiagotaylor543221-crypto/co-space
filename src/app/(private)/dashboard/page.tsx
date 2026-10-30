@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Users } from 'lucide-react';
+import { Users, ArrowRight, LayoutGrid } from 'lucide-react';
 import WorkspaceImage from '@/components/workspace/workspace-image';
+import Badge from '@/components/ui/badge';
+import EmptyState from '@/components/ui/empty-state';
+import Skeleton from '@/components/ui/skeleton';
 import { useI18n } from '@/lib/i18n';
 
 interface Workspace {
@@ -20,88 +23,133 @@ export default function DashboardPage() {
   const { t } = useI18n();
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchWorkspaces = async () => {
       try {
         const res = await fetch('/api/workspaces');
+        if (!res.ok) throw new Error('Error al cargar espacios');
         const data = await res.json();
         setWorkspaces(data);
-      } catch (error) {
-        console.error('Error cargando espacios:', error);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Error al cargar los espacios');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchWorkspaces();
+    void fetchWorkspaces();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-      </div>
-    );
-  }
-
   return (
-    <div className="py-16">
-      <section className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="space-y-8">
+      {/* Encabezado de la vista */}
+      <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between pb-6 border-b border-line">
         <div>
-          <p className="mb-3 flex items-center gap-3 text-[9px] uppercase tracking-[0.25em] text-zinc-500">
-            <span className="h-px w-5 bg-zinc-600" />
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-accent mb-2">
             {t('Descubre tu espacio')}
           </p>
-          <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-5xl">
+          <h1 className="font-heading text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
             {t('Espacios Disponibles')}
           </h1>
+          <p className="mt-2 text-xs text-muted max-w-xl">
+            {t('Selecciona un espacio que se adapte a tu forma de trabajar.')}
+          </p>
         </div>
-
-        <p className="max-w-[200px] text-[11px] leading-relaxed text-zinc-500 sm:text-right">
-          {t('Selecciona un espacio que se adapte a tu forma de trabajar.')}
-        </p>
       </section>
 
-      <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {workspaces.map((workspace) => (
-          <Link key={workspace.id} href={`/dashboard/${workspace.id}`}>
-            <article className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] transition hover:border-white/20">
-              <div className="relative h-44 w-full bg-zinc-900">
-                <WorkspaceImage
-                  imageUrl={workspace.imageUrl}
-                  type={workspace.type}
-                  alt={workspace.name}
-                  className="h-full w-full object-cover"
-                />
-                <span className="absolute left-3 top-3 rounded-full bg-black/70 px-2.5 py-1 text-[8px] font-medium uppercase tracking-widest text-white">
-                  {t('Disponible')}
-                </span>
-              </div>
-
-              <div className="flex items-start justify-between px-4 py-4">
-                <div>
-                  <h2 className="text-sm font-semibold text-white">{workspace.name}</h2>
-                  <p className="mt-1.5 flex items-center gap-1.5 text-[10px] text-zinc-500">
-                    <Users size={12} />
-                    {workspace.capacity} {t(workspace.capacity === 1 ? 'persona' : 'personas')}
-                  </p>
-                </div>
-
-                <div className="text-right">
-                  <p className="text-sm font-semibold text-white">{workspace.pricePerHour} €</p>
-                  <p className="mt-1.5 text-[9px] text-zinc-600">{t('/ hora')}</p>
-                </div>
-              </div>
-            </article>
-          </Link>
-        ))}
-      </section>
-
-      {workspaces.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-white/10 py-20 text-center">
-          <p className="text-xs text-zinc-500">{t('No hay espacios disponibles en este momento.')}</p>
+      {/* Alerta de error si falla la API */}
+      {error && (
+        <div className="rounded-2xl border border-danger/30 bg-danger-soft p-4 text-xs font-medium text-danger">
+          {error}
         </div>
+      )}
+
+      {/* Estado de carga con Skeletons */}
+      {loading && (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map((idx) => (
+            <div key={idx} className="rounded-2xl border border-line bg-surface p-4 space-y-4">
+              <Skeleton className="h-44 w-full rounded-xl" />
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-1/2" />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Grid de tarjetas de espacios */}
+      {!loading && !error && workspaces.length > 0 && (
+        <section className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {workspaces.map((workspace) => (
+            <Link key={workspace.id} href={`/dashboard/${workspace.id}`} className="group block">
+              <article className="overflow-hidden rounded-2xl border border-line bg-surface shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-accent/40 hover:shadow-md flex flex-col justify-between">
+                {/* Imagen del espacio */}
+                <div className="relative h-48 w-full bg-background overflow-hidden border-b border-line">
+                  <WorkspaceImage
+                    imageUrl={workspace.imageUrl}
+                    type={workspace.type}
+                    alt={workspace.name}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  {/* Badge de disponibilidad */}
+                  <div className="absolute left-3 top-3">
+                    <Badge variant="success">
+                      {t('Disponible')}
+                    </Badge>
+                  </div>
+                </div>
+
+                {/* Información y tarifa */}
+                <div className="p-5 flex flex-col justify-between flex-1">
+                  <div>
+                    <h2 className="font-heading text-base font-semibold text-ink group-hover:text-accent transition-colors">
+                      {workspace.name}
+                    </h2>
+                    {workspace.description && (
+                      <p className="mt-1 text-xs text-muted line-clamp-2 leading-relaxed">
+                        {workspace.description}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="mt-6 flex items-center justify-between pt-4 border-t border-line">
+                    <div className="flex items-center gap-1.5 text-xs text-muted">
+                      <Users size={14} className="text-muted" />
+                      <span>
+                        {workspace.capacity} {t(workspace.capacity === 1 ? 'persona' : 'personas')}
+                      </span>
+                    </div>
+
+                    <div className="text-right flex items-center gap-2">
+                      <div>
+                        <span className="font-heading text-base font-semibold text-ink">
+                          {workspace.pricePerHour} €
+                        </span>
+                        <span className="text-[10px] text-muted ml-1">{t('/ hora')}</span>
+                      </div>
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-background border border-line text-ink group-hover:bg-accent group-hover:border-accent transition">
+                        <ArrowRight size={13} />
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            </Link>
+          ))}
+        </section>
+      )}
+
+      {/* Estado vacío cuando no hay espacios */}
+      {!loading && !error && workspaces.length === 0 && (
+        <EmptyState
+          icon={LayoutGrid}
+          title={t('No hay espacios disponibles en este momento.')}
+          description="Vuelve a consultar en unos minutos o contacta con el equipo de soporte."
+        />
       )}
     </div>
   );

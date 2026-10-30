@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <!-- Fondo -->
+  <g>
+    <rect width="800" height="600" fill="#FAFAF7"/>
+    <path d="M0 458h800v142H0z" fill="#E7E5DF"/>
+    <path d="M65 86h670v336H65z" fill="#FFFFFF"/>
+    <path d="M88 110h624v296H88z" fill="#FFE9E1"/>
+  </g>
+  <!-- Muebles -->
+  <g>
+    <rect x="228" y="81" width="344" height="374" rx="28" fill="#6B6B66"/>
+    <rect x="251" y="103" width="298" height="328" rx="18" fill="#FAFAF7"/>
+    <rect x="273" y="126" width="254" height="284" rx="12" fill="#E7E5DF"/>
+    <path d="M397 126v284" stroke="#FFFFFF" stroke-width="9"/>
+    <rect x="281" y="310" width="238" height="45" rx="12" fill="#6B6B66"/>
+    <path d="M296 355h18v72h-18zm182 0h18v72h-18z" fill="#111111"/>
+    <rect x="301" y="244" width="52" height="8" rx="4" fill="#111111"/>
+    <path d="M315 245v34m-16 0h33" stroke="#111111" stroke-width="7" stroke-linecap="round"/>
+    <rect x="335" y="274" width="57" height="36" rx="7" fill="#111111"/>
+    <rect x="342" y="281" width="43" height="21" rx="4" fill="#FFFFFF"/>
+  </g>
+  <!-- Detalles -->
+  <g>
+    <rect x="508" y="256" width="8" height="28" rx="4" fill="#6B6B66"/>
+    <rect x="278" y="140" width="105" height="12" rx="6" fill="#FFFFFF"/>
+    <rect x="411" y="140" width="105" height="12" rx="6" fill="#FFFFFF"/>
+    <path d="M226 457h348" stroke="#111111" stroke-width="8" stroke-linecap="round"/>
+    <rect x="597" y="366" width="47" height="56" rx="9" fill="#FFFFFF"/>
+    <path d="M587 366h67l-9-24h-49z" fill="#6B6B66"/>
+    <path d="M607 342c-6-34 4-54 18-70 12 21 11 41-2 61 14-25 30-32 46-23-11 24-26 39-47 41l-15-9Z" fill="#111111"/>
+  </g>
+</svg>

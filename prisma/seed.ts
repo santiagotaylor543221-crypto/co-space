@@ -8,7 +8,7 @@ async function main() {
   const hashedAdminPassword = await bcrypt.hash('admin123', 10);
   const hashedUserPassword = await bcrypt.hash('user123', 10);
 
-  // 2. Crear Administrador (Regla: El admin solo se crea por seed)
+
   await prisma.user.upsert({
     where: { email: 'admin@coworking.com' },
     update: {},

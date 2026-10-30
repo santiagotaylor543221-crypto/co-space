@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <!-- Fondo -->
+  <g>
+    <rect width="800" height="600" fill="#FAFAF7"/>
+    <path d="M0 454h800v146H0z" fill="#E7E5DF"/>
+    <rect x="98" y="72" width="238" height="178" rx="18" fill="#FFFFFF"/>
+    <path d="M216 72v178M98 161h238" stroke="#E7E5DF" stroke-width="10"/>
+    <path d="M114 90h87v62h-87zM231 90h88v62h-88z" fill="#FAFAF7"/>
+  </g>
+  <!-- Muebles -->
+  <g>
+    <rect x="132" y="335" width="542" height="28" rx="12" fill="#6B6B66"/>
+    <path d="M164 363h22v138h-22zM620 363h22v138h-22z" fill="#111111"/>
+    <rect x="304" y="220" width="204" height="112" rx="14" fill="#111111"/>
+    <rect x="318" y="234" width="176" height="81" rx="8" fill="#E7E5DF"/>
+    <path d="m291 335 18-13h193l20 13a8 8 0 0 1-6 14H297a8 8 0 0 1-6-14" fill="#6B6B66"/>
+    <rect x="538" y="244" width="18" height="90" rx="8" fill="#111111"/>
+    <path d="M509 249h75l-17-40h-42z" fill="#FF5B2E"/>
+    <path d="M526 247h42" stroke="#FAFAF7" stroke-width="5"/>
+    <path d="M205 424h116v18H205z" fill="#FFFFFF"/>
+    <rect x="215" y="440" width="12" height="40" rx="6" fill="#6B6B66"/>
+    <rect x="299" y="440" width="12" height="40" rx="6" fill="#6B6B66"/>
+  </g>
+  <!-- Detalles -->
+  <g>
+    <rect x="112" y="420" width="55" height="45" rx="10" fill="#E7E5DF"/>
+    <path d="M124 420c2-37 12-55 27-55s25 18 27 55z" fill="#6B6B66"/>
+    <path d="M145 419c-20-19-20-37-4-48 18 13 19 29 4 48m9-4c0-25 11-40 29-42 2 21-7 36-29 42" fill="#111111"/>
+    <rect x="370" y="275" width="72" height="5" rx="2.5" fill="#FFFFFF"/>
+    <path d="M0 510h800" stroke="#FFFFFF" stroke-width="4" opacity=".8"/>
+  </g>
+</svg>

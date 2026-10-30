@@ -3,8 +3,12 @@
 import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowRight, Calendar, Check, ShieldCheck } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Calendar, Check, ShieldCheck } from 'lucide-react';
 import WorkspaceImage from '@/components/workspace/workspace-image';
+import Button from '@/components/ui/button';
+import Card from '@/components/ui/card';
+import Badge from '@/components/ui/badge';
+import Skeleton from '@/components/ui/skeleton';
 import { useI18n } from '@/lib/i18n';
 
 interface Workspace {
@@ -19,9 +23,8 @@ interface Workspace {
   amenities?: string[];
 }
 
-// Horario de 7:00 a 21:00
+// Horario comercial de 7:00 a 21:00
 const HOURS = Array.from({ length: 15 }, (_, i) => i + 7);
-
 const formatHour = (hour: number) => `${String(hour).padStart(2, '0')}:00`;
 
 export default function WorkspaceDetailPage() {
@@ -30,9 +33,13 @@ export default function WorkspaceDetailPage() {
   return (
     <Suspense
       fallback={
-        <main className="flex min-h-[50vh] items-center justify-center">
-          <p className="text-xs text-zinc-500">{t('Cargando espacio...')}</p>
-        </main>
+        <div className="space-y-6">
+          <Skeleton className="h-6 w-32" />
+          <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+            <Skeleton className="h-96 w-full rounded-3xl" />
+            <Skeleton className="h-96 w-full rounded-3xl" />
+          </div>
+        </div>
       }
     >
       <WorkspaceDetailContent />
@@ -74,7 +81,6 @@ function WorkspaceDetailContent() {
 
   const handleStartChange = (value: number) => {
     setStartHour(value);
-    // Si la hora fin queda antes o igual al inicio, la movemos una hora después
     if (endHour <= value) setEndHour(value + 1);
   };
 
@@ -106,25 +112,31 @@ function WorkspaceDetailContent() {
   };
 
   const inputStyles =
-    'w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-[10px] text-white outline-none transition focus:border-white/30 [color-scheme:dark]';
-
-  const labelStyles = 'mb-2 block text-[9px] font-medium text-zinc-400';
+    'w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-xs text-ink outline-none transition focus:border-accent focus:ring-1 focus:ring-accent';
+  const labelStyles = 'mb-1.5 block text-xs font-medium text-ink';
 
   if (loading) {
     return (
-      <main className="flex min-h-[50vh] items-center justify-center">
-        <p className="text-xs text-zinc-500">Cargando espacio...</p>
-      </main>
+      <div className="space-y-6">
+        <Skeleton className="h-6 w-32" />
+        <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+          <Skeleton className="h-80 w-full rounded-3xl" />
+          <Skeleton className="h-80 w-full rounded-3xl" />
+        </div>
+      </div>
     );
   }
 
   if (!workspace) {
     return (
-      <main className="flex min-h-[50vh] items-center justify-center px-4">
-        <p role="alert" className="text-xs text-red-400">
-          {error || t('Espacio no encontrado')}
-        </p>
-      </main>
+      <div className="rounded-3xl border border-danger/30 bg-danger-soft p-8 text-center text-xs font-medium text-danger">
+        {error || t('Espacio no encontrado')}
+        <div className="mt-4">
+          <Link href="/dashboard" className="text-ink font-semibold underline">
+            {t('Volver al catálogo')}
+          </Link>
+        </div>
+      </div>
     );
   }
 
@@ -132,158 +144,175 @@ function WorkspaceDetailContent() {
   const totalPrice = totalHours * workspace.pricePerHour;
 
   return (
-    <div className="py-10">
+    <div className="space-y-6">
+      {/* Botón de retroceso */}
       <Link
         href="/dashboard"
-        className="mb-6 inline-block text-[9px] text-zinc-500 transition hover:text-white"
+        className="inline-flex items-center gap-1.5 text-xs text-muted transition hover:text-ink"
       >
-        {t('← Volver al catálogo')}
+        <ArrowLeft size={14} />
+        <span>{t('Volver al catálogo')}</span>
       </Link>
 
-          <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-            {/* Imagen + información */}
+      <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
+        {/* Columna izquierda: Imagen y detalles del espacio */}
+        <div className="space-y-6">
+          <div className="h-72 w-full overflow-hidden rounded-3xl border border-line bg-background sm:h-96">
+            <WorkspaceImage
+              imageUrl={workspace.imageUrl}
+              type={workspace.type}
+              alt={workspace.name}
+              className="h-full w-full object-cover"
+            />
+          </div>
+
+          <div className="rounded-3xl border border-line bg-surface p-6 sm:p-8 space-y-5 shadow-xs">
+            {workspace.location && (
+              <Badge variant="neutral">
+                {workspace.location}
+              </Badge>
+            )}
+
             <div>
-              <div className="h-64 w-full overflow-hidden rounded-2xl border border-white/10 bg-zinc-900 sm:h-[352px]">
-                <WorkspaceImage
-                  imageUrl={workspace.imageUrl}
-                  type={workspace.type}
-                  alt={workspace.name}
-                  className="h-full w-full object-cover"
+              <h1 className="font-heading text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
+                {workspace.name}
+              </h1>
+              <p className="mt-2.5 text-sm text-muted leading-relaxed">
+                {workspace.description}
+              </p>
+            </div>
+
+            {workspace.amenities && workspace.amenities.length > 0 && (
+              <div className="pt-4 border-t border-line">
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-muted mb-3">
+                  {t('Comodidades')}
+                </h2>
+                <ul className="grid gap-2.5 sm:grid-cols-2">
+                  {workspace.amenities.map((amenity) => (
+                    <li
+                      key={amenity}
+                      className="flex items-center gap-2 text-xs text-ink"
+                    >
+                      <span className="flex h-5 w-5 items-center justify-center rounded-md bg-accent-soft text-ink">
+                        <Check size={12} strokeWidth={2} />
+                      </span>
+                      <span>{amenity}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Columna derecha: Formulario de reserva */}
+        <aside>
+          <Card className="rounded-3xl p-6 sm:p-8 shadow-sm sticky top-24">
+            <form onSubmit={handleBooking} className="flex flex-col gap-5">
+              <div className="flex items-center justify-between pb-4 border-b border-line">
+                <div>
+                  <h2 className="font-heading text-base font-semibold text-ink">
+                    {t('Reserva tu espacio')}
+                  </h2>
+                  <p className="text-[11px] text-muted">Confirmación inmediata</p>
+                </div>
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-background border border-line">
+                  <Calendar size={16} className="text-muted" />
+                </div>
+              </div>
+
+              {error && (
+                <p
+                  role="alert"
+                  className="rounded-xl border border-danger/30 bg-danger-soft px-3.5 py-2.5 text-xs font-medium text-danger"
+                >
+                  {error}
+                </p>
+              )}
+
+              <div>
+                <label htmlFor="date" className={labelStyles}>
+                  {t('Fecha')}
+                </label>
+                <input
+                  id="date"
+                  type="date"
+                  required
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className={inputStyles}
                 />
               </div>
 
-              <section className="mt-8 px-1">
-                {workspace.location && (
-                  <p className="mb-3 flex items-center gap-3 text-[8px] uppercase tracking-[0.25em] text-zinc-500">
-                    <span className="h-px w-5 bg-zinc-600" />
-                    {workspace.location}
-                  </p>
-                )}
-
-                <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-                  {workspace.name}
-                </h1>
-
-                <p className="mt-3 max-w-xl text-xs leading-relaxed text-zinc-400">
-                  {workspace.description}
-                </p>
-
-                {workspace.amenities && workspace.amenities.length > 0 && (
-                  <div className="mt-8">
-                    <h2 className="text-xs font-semibold text-white">{t('Comodidades')}</h2>
-                    <ul className="mt-2 grid gap-2 sm:grid-cols-2">
-                      {workspace.amenities.map((amenity) => (
-                        <li
-                          key={amenity}
-                          className="flex items-center gap-2 text-[10px] text-zinc-400"
-                        >
-                          <Check size={11} className="text-zinc-500" />
-                          {amenity}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </section>
-            </div>
-
-            {/* Formulario de reserva */}
-            <aside className="h-fit rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-              <form onSubmit={handleBooking} className="flex flex-col gap-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-[8px] uppercase tracking-[0.25em] text-zinc-500">
-                    {t('Reserva tu espacio')}
-                  </h2>
-                  <Calendar size={14} className="text-zinc-400" />
-                </div>
-
-                {error && (
-                  <p
-                    role="alert"
-                    className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-[10px] text-red-400"
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="startHour" className={labelStyles}>
+                    {t('Hora inicio')}
+                  </label>
+                  <select
+                    id="startHour"
+                    value={startHour}
+                    onChange={(e) => handleStartChange(Number(e.target.value))}
+                    className={inputStyles}
                   >
-                    {error}
-                  </p>
-                )}
+                    {HOURS.slice(0, -1).map((hour) => (
+                      <option key={hour} value={hour}>
+                        {formatHour(hour)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
                 <div>
-                  <label htmlFor="date" className={labelStyles}>
-                    {t('Fecha')}
+                  <label htmlFor="endHour" className={labelStyles}>
+                    {t('Hora fin')}
                   </label>
-                  <input
-                    id="date"
-                    type="date"
-                    required
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
+                  <select
+                    id="endHour"
+                    value={endHour}
+                    onChange={(e) => setEndHour(Number(e.target.value))}
                     className={inputStyles}
-                  />
+                  >
+                    {HOURS.filter((hour) => hour > startHour).map((hour) => (
+                      <option key={hour} value={hour}>
+                        {formatHour(hour)}
+                      </option>
+                    ))}
+                  </select>
                 </div>
+              </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label htmlFor="startHour" className={labelStyles}>
-                      {t('Hora inicio')}
-                    </label>
-                    <select
-                      id="startHour"
-                      value={startHour}
-                      onChange={(e) => handleStartChange(Number(e.target.value))}
-                      className={inputStyles}
-                    >
-                      {HOURS.slice(0, -1).map((hour) => (
-                        <option key={hour} value={hour}>
-                          {formatHour(hour)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label htmlFor="endHour" className={labelStyles}>
-                      {t('Hora fin')}
-                    </label>
-                    <select
-                      id="endHour"
-                      value={endHour}
-                      onChange={(e) => setEndHour(Number(e.target.value))}
-                      className={inputStyles}
-                    >
-                      {HOURS.filter((hour) => hour > startHour).map((hour) => (
-                        <option key={hour} value={hour}>
-                          {formatHour(hour)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+              {/* Cálculo del precio total */}
+              <div className="flex items-end justify-between border-t border-line pt-5 mt-2">
+                <div>
+                  <p className="text-xs font-medium text-muted">{t('Precio Total')}</p>
+                  <p className="text-[11px] text-muted mt-0.5">
+                    {totalHours} {t(totalHours === 1 ? 'hora' : 'horas')} × {workspace.pricePerHour} €
+                  </p>
                 </div>
-
-                <div className="flex items-end justify-between border-t border-white/10 pt-4">
-                  <div>
-                    <p className="text-[9px] text-zinc-400">{t('Precio Total')}</p>
-                    <p className="mt-1 text-[8px] text-zinc-600">
-                      {totalHours} {t(totalHours === 1 ? 'hora' : 'horas')} × {workspace.pricePerHour} €
-                    </p>
-                  </div>
-                  <p className="text-2xl font-semibold text-white">{totalPrice} €</p>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-white py-3 text-xs font-semibold text-black transition hover:bg-zinc-200 disabled:opacity-50"
-                >
-                  {submitting ? t('Reservando...') : t('Confirmar Reserva')}
-                  {!submitting && <ArrowRight size={14} />}
-                </button>
-
-                <p className="flex items-center justify-center gap-1.5 text-[8px] text-zinc-600">
-                  <ShieldCheck size={11} />
-                  {t('Pago seguro · Cancelación flexible')}
+                <p className="font-heading text-3xl font-semibold text-ink">
+                  {totalPrice} €
                 </p>
-              </form>
-            </aside>
-          </div>
+              </div>
+
+              <Button
+                type="submit"
+                disabled={submitting}
+                variant="primary"
+                className="w-full py-3 mt-2 shadow-xs"
+              >
+                {submitting ? t('Reservando...') : t('Confirmar Reserva')}
+                {!submitting && <ArrowRight size={15} />}
+              </Button>
+
+              <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted pt-2 border-t border-line">
+                <ShieldCheck size={14} className="text-accent" />
+                <span>{t('Pago seguro · Cancelación flexible')}</span>
+              </div>
+            </form>
+          </Card>
+        </aside>
+      </div>
     </div>
   );
 }

@@ -4,8 +4,14 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowRight, ArrowLeft } from 'lucide-react';
+import Button from '@/components/ui/button';
+import Card from '@/components/ui/card';
+import FormField from '@/components/ui/form-field';
+import TextInput from '@/components/ui/text-input';
+import Brand from '@/components/layout/brand';
 import { useI18n } from '@/lib/i18n';
 
+// Pantalla de registro limpia, con tarjeta centrada sobre fondo claro y feedback visual
 export default function RegisterPage() {
   const { t } = useI18n();
   const router = useRouter();
@@ -31,7 +37,7 @@ export default function RegisterPage() {
         throw new Error(data.error || 'Error al registrarse');
       }
 
-      // Registro exitoso, lo enviamos al login
+      // Registro exitoso, redirigimos a login con parámetro para mostrar confirmación
       router.push('/login?registered=true');
     } catch (err: unknown) {
       setError(err instanceof Error ? t(err.message) : t('Error al registrarse'));
@@ -40,110 +46,98 @@ export default function RegisterPage() {
     }
   };
 
-  const labelStyles = 'mb-2 block text-[10px] font-medium text-zinc-400';
-  const inputStyles =
-    'w-full rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3.5 text-xs text-white placeholder:text-zinc-600 outline-none transition focus:border-white/30';
-
   return (
-    <div
-      className="relative flex min-h-screen flex-col items-center justify-center bg-[#08080a] px-4 py-10 font-sans"
-      style={{
-        backgroundImage:
-          'linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px)',
-        backgroundSize: '64px 64px',
-      }}
-    >
-      {/* Logo */}
-      <Link href="/" className="mb-10 text-lg font-semibold tracking-tight text-white">
-        <span className="font-normal text-zinc-300">Co</span>Space
-      </Link>
+    <main className="flex w-full flex-col items-center">
+      {/* Cabecera centrada con logotipo */}
+      <header className="mb-8 text-center flex flex-col items-center">
+        <div className="mb-6">
+          <Brand />
+        </div>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-accent mb-2">
+          {t('Únete a CoSpace')}
+        </p>
+        <h1 className="font-heading text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
+          {t('Crear cuenta')}
+        </h1>
+        <p className="mt-2 text-xs text-muted max-w-xs">
+          {t('Empieza a trabajar a tu manera.')}
+        </p>
+      </header>
 
-      {/* Encabezado */}
-      <div className="mb-8 text-center">
-        <p className="mb-3 text-[8px] uppercase tracking-[0.3em] text-zinc-600">{t('Únete a CoSpace')}</p>
-        <h1 className="text-4xl font-semibold tracking-tight text-white">{t('Crear cuenta')}</h1>
-        <p className="mt-3 text-xs text-zinc-500">{t('Empieza a trabajar a tu manera.')}</p>
-      </div>
-
-      {/* Tarjeta */}
-      <div className="w-full max-w-[315px] rounded-2xl border border-white/10 bg-[#0e0e10] p-5">
+      {/* Tarjeta de registro */}
+      <Card className="w-full rounded-3xl p-6 sm:p-8 shadow-sm">
         {error && (
-          <div className="mb-5 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-center text-[10px] text-red-400">
+          <p
+            role="alert"
+            className="mb-5 rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 text-xs font-medium text-danger"
+          >
             {error}
-          </div>
+          </p>
         )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-          <div>
-            <label htmlFor="name" className={labelStyles}>
-              {t('Nombre Completo')}
-            </label>
-            <input
+          <FormField label={t('Nombre Completo')} htmlFor="name">
+            <TextInput
               id="name"
               type="text"
               required
               placeholder="Marina Santos"
-              className={inputStyles}
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              hasError={Boolean(error)}
             />
-          </div>
+          </FormField>
 
-          <div>
-            <label htmlFor="email" className={labelStyles}>
-              {t('Correo Electrónico')}
-            </label>
-            <input
+          <FormField label={t('Correo Electrónico')} htmlFor="email">
+            <TextInput
               id="email"
               type="email"
               required
               placeholder="tu@correo.com"
-              className={inputStyles}
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              hasError={Boolean(error)}
             />
-          </div>
+          </FormField>
 
-          <div>
-            <label htmlFor="password" className={labelStyles}>
-              {t('Contraseña')}
-            </label>
-            <input
+          <FormField label={t('Contraseña')} htmlFor="password">
+            <TextInput
               id="password"
               type="password"
               required
               placeholder="••••••••"
-              className={inputStyles}
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              hasError={Boolean(error)}
             />
-          </div>
+          </FormField>
 
-          <button
+          <Button
             type="submit"
             disabled={loading}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-white py-3.5 text-xs font-semibold text-black transition hover:bg-zinc-200 disabled:opacity-50"
+            variant="primary"
+            className="w-full py-3 mt-2 shadow-xs"
           >
             {loading ? t('Procesando...') : t('Registrarse')}
-            {!loading && <ArrowRight size={14} />}
-          </button>
+            {!loading && <ArrowRight size={15} />}
+          </Button>
         </form>
 
-        <div className="mt-5 border-t border-white/10 pt-5 text-center text-[10px] text-zinc-500">
+        <footer className="mt-6 border-t border-line pt-5 text-center text-xs text-muted">
           {t('¿Ya tienes cuenta?')}{' '}
-          <Link href="/login" className="font-semibold text-white transition hover:underline">
+          <Link href="/login" className="font-semibold text-ink hover:underline">
             {t('Inicia sesión')}
           </Link>
-        </div>
-      </div>
+        </footer>
+      </Card>
 
       <Link
         href="/"
-        className="mt-8 flex items-center gap-1.5 text-[10px] text-zinc-600 transition hover:text-zinc-400"
+        className="mt-6 flex items-center gap-1.5 text-xs text-muted transition hover:text-ink"
       >
-        <ArrowLeft size={10} />
-        {t('Volver al inicio')}
+        <ArrowLeft size={13} />
+        <span>{t('Volver al inicio')}</span>
       </Link>
-    </div>
+    </main>
   );
 }
