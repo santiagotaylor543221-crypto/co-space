@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <!-- Fondo -->
+  <g>
+    <rect width="800" height="600" fill="#FFE9E1"/>
+    <path d="M0 453h800v147H0z" fill="#E7E5DF"/>
+    <path d="M110 76h580v363H110z" fill="#FAFAF7"/>
+    <path d="M137 102h258v309H137z" fill="#FFFFFF"/>
+  </g>
+  <!-- Muebles -->
+  <g>
+    <path d="m369 118 278 20v288l-278-18z" fill="#6B6B66"/>
+    <path d="m390 140 236 17v246l-236-16z" fill="#E7E5DF"/>
+    <path d="m404 159 207 14v204l-207-14z" fill="#FAFAF7"/>
+    <path d="m510 166 8 1v208l-8-1z" fill="#FFFFFF"/>
+    <path d="m398 329 218 15v34l-218-15z" fill="#6B6B66"/>
+    <path d="m415 369 17 1v52l-17-1zm173 11 17 1v52l-17-1z" fill="#111111"/>
+    <path d="M177 344h169a19 19 0 0 1 19 19v30H158v-30a19 19 0 0 1 19-19" fill="#FF5B2E"/>
+    <path d="M170 388h190v15H170z" fill="#111111"/>
+    <path d="M190 403h15v50h-15zm134 0h15v50h-15z" fill="#6B6B66"/>
+    <path d="m314 259 36-5v73l-36 5z" fill="#111111"/>
+    <path d="m296 260 48-7-4-23-38 5z" fill="#FFFFFF"/>
+  </g>
+  <!-- Detalles -->
+  <g>
+    <path d="m165 107 203 1v11l-203 2z" fill="#E7E5DF"/>
+    <rect x="435" y="196" width="140" height="7" rx="3" fill="#FFFFFF"/>
+    <rect x="435" y="216" width="108" height="7" rx="3" fill="#FFFFFF"/>
+    <circle cx="535" cy="248" r="18" fill="#E7E5DF"/>
+    <path d="m527 248 6 6 12-15" stroke="#6B6B66" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M110 454h580" stroke="#FFFFFF" stroke-width="5"/>
+  </g>
+</svg>

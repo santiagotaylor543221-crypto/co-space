@@ -19,7 +19,7 @@ ENV DATABASE_URL=postgresql://build:build@localhost:5432/build
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN npm run build
+RUN npm run build                                               
 
 FROM base AS runner
 

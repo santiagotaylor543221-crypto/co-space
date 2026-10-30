@@ -7,6 +7,7 @@ interface LogoutButtonProps {
   className?: string;
 }
 
+// Botón de cierre de sesión con tokens semánticos
 export default function LogoutButton({ className = "" }: LogoutButtonProps) {
   const { t } = useI18n();
 
@@ -14,10 +15,10 @@ export default function LogoutButton({ className = "" }: LogoutButtonProps) {
     <form action="/api/auth/logout" method="post">
       <button
         type="submit"
-        className={`inline-flex items-center gap-1.5 text-zinc-400 transition hover:text-white ${className}`}
+        className={`inline-flex items-center gap-1.5 text-xs text-muted transition hover:text-ink ${className}`}
       >
-        <LogOut size={13} />
-        {t("Cerrar sesión")}
+        <LogOut size={14} />
+        <span>{t("Cerrar sesión")}</span>
       </button>
     </form>
   );

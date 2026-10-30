@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Calendar, Clock, Trash2 } from 'lucide-react';
+import { Calendar, Clock, Trash2, CalendarDays } from 'lucide-react';
+import Button from '@/components/ui/button';
+import Badge from '@/components/ui/badge';
+import EmptyState from '@/components/ui/empty-state';
+import Skeleton from '@/components/ui/skeleton';
 import { useI18n } from '@/lib/i18n';
 
 interface Booking {
@@ -40,7 +44,7 @@ export default function MisReservasPage() {
 
   const handleCancelBooking = async (bookingId: string) => {
     if (!confirm(t('¿Estás seguro de que deseas cancelar esta reserva?'))) return;
-    
+
     setCancelingId(bookingId);
     try {
       const res = await fetch(`/api/bookings/${bookingId}`, {
@@ -60,85 +64,108 @@ export default function MisReservasPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-      </div>
-    );
-  }
-
   return (
-    <div className="py-16">
-      <section className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="space-y-8">
+      {/* Encabezado */}
+      <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between pb-6 border-b border-line">
         <div>
-          <p className="mb-3 flex items-center gap-3 text-[9px] uppercase tracking-[0.25em] text-zinc-500">
-            <span className="h-px w-5 bg-zinc-600" />
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-accent mb-2">
             {t('Panel Personal')}
           </p>
-          <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-5xl">
+          <h1 className="font-heading text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
             {t('Mis Reservas')}
           </h1>
+          <p className="mt-2 text-xs text-muted max-w-xl">
+            {t('Gestiona tus próximos espacios de trabajo.')}
+          </p>
         </div>
-        <p className="max-w-[200px] text-[11px] leading-relaxed text-zinc-500 sm:text-right">
-          {t('Gestiona tus próximos espacios de trabajo.')}
-        </p>
       </section>
 
+      {/* Alerta de error */}
       {error && (
-        <div className="mb-8 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-xs text-red-400">
+        <div className="rounded-2xl border border-danger/30 bg-danger-soft p-4 text-xs font-medium text-danger">
           {error}
         </div>
       )}
 
-      {bookings.length === 0 && !error ? (
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 py-20 text-center">
-          <Calendar className="mb-4 text-zinc-600" size={32} />
-          <p className="mb-4 text-sm text-zinc-400">{t('No tienes reservas activas en este momento.')}</p>
-          <Link 
-            href="/dashboard" 
-            className="rounded-lg bg-white px-5 py-2 text-xs font-semibold text-black transition hover:bg-zinc-200"
-          >
-            {t('Explorar espacios')}
-          </Link>
+      {/* Estado de carga con Skeletons */}
+      {loading && (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map((idx) => (
+            <div key={idx} className="rounded-2xl border border-line bg-surface p-6 space-y-4">
+              <Skeleton className="h-6 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-10 w-full rounded-xl pt-4" />
+            </div>
+          ))}
         </div>
-      ) : (
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      )}
+
+      {/* Estado vacío cuando no hay reservas */}
+      {!loading && !error && bookings.length === 0 && (
+        <EmptyState
+          icon={CalendarDays}
+          title={t('No tienes reservas activas en este momento.')}
+          description="Reserva tu primer escritorio, sala o cabina desde nuestro catálogo."
+          action={
+            <Link href="/dashboard">
+              <Button variant="primary" size="md">
+                {t('Explorar espacios')}
+              </Button>
+            </Link>
+          }
+        />
+      )}
+
+      {/* Grid de reservas */}
+      {!loading && !error && bookings.length > 0 && (
+        <section className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {bookings.map((booking) => {
             const startDate = new Date(booking.startTime);
             const endDate = new Date(booking.endTime);
-            
+
             return (
-              <article 
-                key={booking.id} 
-                className="flex flex-col justify-between overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] transition hover:border-white/20"
+              <article
+                key={booking.id}
+                className="flex flex-col justify-between overflow-hidden rounded-2xl border border-line bg-surface shadow-xs transition-all hover:border-line/80 hover:shadow-sm"
               >
-                <div className="p-5">
-                  <h2 className="mb-4 text-lg font-semibold text-white">{booking.workspace.name}</h2>
-                  
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3 text-xs text-zinc-400">
-                      <Calendar size={14} className="text-zinc-500" />
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <Badge variant="success">
+                      {t('Confirmado')}
+                    </Badge>
+                  </div>
+
+                  <h2 className="font-heading text-lg font-semibold text-ink">
+                    {booking.workspace.name}
+                  </h2>
+
+                  <div className="mt-4 space-y-2 text-xs text-muted">
+                    <div className="flex items-center gap-2.5">
+                      <Calendar size={14} className="text-muted" />
                       <span>{startDate.toLocaleDateString(language)}</span>
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-zinc-400">
-                      <Clock size={14} className="text-zinc-500" />
+                    <div className="flex items-center gap-2.5">
+                      <Clock size={14} className="text-muted" />
                       <span>
-                        {startDate.toLocaleTimeString(language, { hour: '2-digit', minute: '2-digit' })} -
+                        {startDate.toLocaleTimeString(language, { hour: '2-digit', minute: '2-digit' })} -{' '}
                         {endDate.toLocaleTimeString(language, { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="border-t border-white/10 bg-zinc-900/30 p-4">
+                {/* Acciones */}
+                <div className="border-t border-line bg-background/50 p-4">
                   <button
+                    type="button"
                     onClick={() => handleCancelBooking(booking.id)}
                     disabled={cancelingId === booking.id}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 py-2.5 text-xs font-medium text-red-400 transition hover:bg-red-500/20 disabled:opacity-50"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-danger/20 bg-danger-soft py-2.5 text-xs font-medium text-danger transition hover:bg-danger-soft/80 disabled:opacity-50"
                   >
                     <Trash2 size={14} />
-                    {cancelingId === booking.id ? t('Cancelando...') : t('Cancelar reserva')}
+                    <span>{cancelingId === booking.id ? t('Cancelando...') : t('Cancelar reserva')}</span>
                   </button>
                 </div>
               </article>
