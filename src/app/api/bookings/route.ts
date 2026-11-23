@@ -50,18 +50,24 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error en POST /api/bookings:', error);
     // Si el error viene de nuestro Service (con status), lo usamos. Si no, es un 500.
-    const status = error.status || 500;
-    const message = error.message || 'Error interno del servidor';
+    const status =
+      typeof error === 'object' && error !== null && 'status' in error && typeof error.status === 'number'
+        ? error.status || 500
+        : 500;
+    const message =
+      typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string'
+        ? error.message || 'Error interno del servidor'
+        : 'Error interno del servidor';
     return NextResponse.json({ error: message }, { status });
   }
 }
 
 
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get('access_token')?.value;
@@ -86,7 +92,7 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json(userBookings, { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error obteniendo reservas:', error);
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
   }

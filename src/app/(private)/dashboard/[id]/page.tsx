@@ -28,8 +28,6 @@ const HOURS = Array.from({ length: 15 }, (_, i) => i + 7);
 const formatHour = (hour: number) => `${String(hour).padStart(2, '0')}:00`;
 
 export default function WorkspaceDetailPage() {
-  const { t } = useI18n();
-
   return (
     <Suspense
       fallback={
