@@ -1,0 +1,39 @@
+
+name: CoSpace CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Validate application
+    runs-on: ubuntu-latest
+
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/cospace_ci
+      DIRECT_URL: postgresql://ci:ci@localhost:5432/cospace_ci
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check ESLint
+        run: npm run lint
+
+      - name: Check TypeScript
+        run: npx tsc --noEmit
+
+      - name: Build Next.js
+        run: npm run build
