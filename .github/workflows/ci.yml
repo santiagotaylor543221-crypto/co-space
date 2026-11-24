@@ -110,7 +110,7 @@ jobs:
         shell: bash
         run: |
           PARAMETERS=$(jq -nc \
-            --arg command "/opt/cospace/deploy.sh $IMAGE_TAG" \
+            --arg command "/bin/bash /opt/cospace/deploy.sh $IMAGE_TAG" \
             '{commands: [$command], executionTimeout: ["900"]}')
 
           COMMAND_ID=$(aws ssm send-command \
