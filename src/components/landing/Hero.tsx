@@ -1,74 +1,42 @@
 "use client";
 
-import { ArrowRight, Sparkles } from "lucide-react";
-import Button from "@/components/ui/button";
-import Badge from "@/components/ui/badge";
-import { TICKER_ITEMS } from "@/data/landing";
+import Image from "next/image";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 
-// Sección Hero con titular monumental, CTAs dobles y cinta continua en movimiento
 export default function Hero() {
   const { t } = useI18n();
 
   return (
-    <section className="relative overflow-hidden pt-20 pb-16 md:pt-28 md:pb-24">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8 text-center">
-        {/* Badge superior */}
-        <div className="flex justify-center mb-6">
-          <Badge variant="accent" className="px-3.5 py-1 text-xs">
-            <Sparkles size={13} className="text-accent" />
-            <span>{t("Reserva de coworking")}</span>
-          </Badge>
-        </div>
-
-        {/* Titular enorme estilo Optimus */}
-        <h1 className="mx-auto max-w-4xl font-heading text-5xl font-semibold tracking-tight text-ink sm:text-6xl md:text-7xl leading-[1.05]">
-          {t("Reserva tu espacio. Trabaja sin fricción.")}
+    <section className="mx-auto grid max-w-7xl items-center gap-10 px-6 py-14 md:grid-cols-2 md:py-20 lg:px-8">
+      <div>
+        <h1 className="max-w-xl font-heading text-5xl leading-[1.05] font-semibold tracking-tight text-ink lg:text-7xl">
+          {t("Un espacio para cada forma de trabajar")}
         </h1>
-
-        {/* Subtítulo descriptivo */}
-        <p className="mx-auto mt-6 max-w-2xl text-base text-muted sm:text-lg leading-relaxed">
-          {t(
-            "Gestiona la disponibilidad y reserva de entornos de trabajo compartido de forma controlada, inmediata y segura."
-          )}
+        <p className="mt-6 max-w-lg text-base leading-relaxed text-muted sm:text-lg">
+          {t("Reserva un escritorio para concentrarte, una sala para reunirte con tu equipo o una cabina para tu próxima llamada.")}
         </p>
-
-        {/* Botones duales */}
-        <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-          <a href="#planes">
-            <Button variant="primary" size="lg" className="shadow-sm">
-              <span>{t("Empezar a reservar")}</span>
-              <ArrowRight size={16} />
-            </Button>
-          </a>
-
-          <a href="#como-funciona">
-            <Button variant="secondary" size="lg">
-              {t("Ver cómo funciona")}
-            </Button>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Link href="/dashboard" className="inline-flex items-center gap-2 rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-ink hover:bg-accent/90">
+            {t("Empezar a reservar")}
+            <ArrowRight size={16} aria-hidden="true" />
+          </Link>
+          <a href="#espacios" className="rounded-xl border border-line bg-surface px-6 py-3 text-sm font-medium text-ink hover:bg-accent-soft">
+            {t("Explorar espacios")}
           </a>
         </div>
       </div>
 
-      {/* Cinta horizontal continua en movimiento (Ticker) */}
-      <div className="mt-20 border-y border-line bg-surface py-4 overflow-hidden">
-        <div className="flex w-max animate-ticker gap-12 whitespace-nowrap">
-          {/* Primer bloque de métricas */}
-          {TICKER_ITEMS.map((item) => (
-            <div key={`ticker-1-${item.id}`} className="flex items-center gap-3 text-xs font-medium text-ink">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-              <span>{t(item.translationKey)}</span>
-            </div>
-          ))}
-
-          {/* Duplicado para efecto infinito sin saltos */}
-          {TICKER_ITEMS.map((item) => (
-            <div key={`ticker-2-${item.id}`} className="flex items-center gap-3 text-xs font-medium text-ink">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-              <span>{t(item.translationKey)}</span>
-            </div>
-          ))}
-        </div>
+      <div className="relative aspect-[5/4] overflow-hidden rounded-3xl bg-accent-soft">
+        <Image
+          src="/images/landing/coworking.webp"
+          alt={t("Personas trabajando en escritorios compartidos")}
+          fill
+          preload
+          sizes="(min-width: 1280px) 588px, (min-width: 768px) 50vw, 100vw"
+          className="object-cover"
+        />
       </div>
     </section>
   );

@@ -15,7 +15,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "co-space | Reserva de espacios de coworking",
-  description: "Plataforma moderna de reserva de espacios de coworking. Rápido, seguro y sin fricción.",
+  description: "Reserva escritorios, salas de reuniones y cabinas. Administra tus espacios de coworking y sus reservas desde un solo lugar.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

@@ -1,53 +1,30 @@
 "use client";
 
+import Link from "next/link";
 import Brand from "@/components/layout/brand";
-import { FOOTER_COLUMNS } from "@/data/landing";
 import { useI18n } from "@/lib/i18n";
 
-// Pie de página con logotipo, columnas de enlaces y copyright
+const links = [
+  { href: "#espacios", label: "Espacios" },
+  { href: "#como-funciona", label: "Cómo funciona" },
+  { href: "#administracion", label: "Administración" },
+  { href: "#planes", label: "Planes" },
+  { href: "/login", label: "Iniciar sesión" },
+];
+
 export default function Footer() {
   const { t } = useI18n();
 
   return (
-    <footer className="border-t border-line bg-surface py-16">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="grid gap-12 lg:grid-cols-12">
-          {/* Columna de marca */}
-          <div className="lg:col-span-5 space-y-4">
-            <Brand />
-            <p className="max-w-sm text-xs leading-relaxed text-muted">
-              {t(
-                "Plataforma de reserva y gestión de espacios de coworking seguros, rápidos y type-safe."
-              )}
-            </p>
-            <p className="text-[11px] text-muted pt-4">
-              © 2026 co-space. {t("Todos los derechos reservados.")}
-            </p>
-          </div>
-
-          {/* Columnas de navegación */}
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:col-span-7">
-            {FOOTER_COLUMNS.map((column) => (
-              <div key={column.id}>
-                <h4 className="font-heading text-xs font-semibold uppercase tracking-wider text-ink mb-4">
-                  {t(column.titleKey)}
-                </h4>
-                <ul className="space-y-2.5 text-xs text-muted">
-                  {column.links.map((link) => (
-                    <li key={link.labelKey}>
-                      <a
-                        href={link.href}
-                        className="transition hover:text-ink"
-                      >
-                        {t(link.labelKey)}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </div>
+    <footer className="border-t border-line bg-surface py-10">
+      <div className="mx-auto flex max-w-7xl flex-col gap-6 px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+        <Brand />
+        <nav aria-label={t("Navegación del pie de página")} className="flex flex-wrap gap-x-6 gap-y-3 text-sm text-muted">
+          {links.map(({ href, label }) => (
+            <Link key={href} href={href} className="hover:text-ink">{t(label)}</Link>
+          ))}
+        </nav>
+        <p className="text-xs text-muted">© 2026 co-space</p>
       </div>
     </footer>
   );
