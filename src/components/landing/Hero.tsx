@@ -28,7 +28,19 @@ export default function Hero() {
         </div>
       </div>
 
-      <div className="relative aspect-[5/4] overflow-hidden rounded-3xl bg-accent-soft">
+      <div
+        className="hero-photo relative aspect-[5/4] overflow-hidden rounded-3xl bg-accent-soft"
+        onPointerMove={(event) => {
+          if (!window.matchMedia("(hover: hover) and (prefers-reduced-motion: no-preference)").matches) return;
+          const rect = event.currentTarget.getBoundingClientRect();
+          event.currentTarget.style.setProperty("--photo-x", `${((event.clientX - rect.left) / rect.width - 0.5) * 8}px`);
+          event.currentTarget.style.setProperty("--photo-y", `${((event.clientY - rect.top) / rect.height - 0.5) * 8}px`);
+        }}
+        onPointerLeave={(event) => {
+          event.currentTarget.style.setProperty("--photo-x", "0px");
+          event.currentTarget.style.setProperty("--photo-y", "0px");
+        }}
+      >
         <Image
           src="/images/landing/coworking.webp"
           alt={t("Personas trabajando en escritorios compartidos")}

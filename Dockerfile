@@ -62,6 +62,9 @@ COPY --from=builder /app/next.config.ts ./next.config.ts
 
 EXPOSE 3000
 
+RUN mkdir -p /app/data/workspace-images && chown -R node:node /app/data
+ENV WORKSPACE_UPLOAD_DIR=/app/data/workspace-images
+
 USER node
 
 # Ejecutar migraciones y arrancar Next.js

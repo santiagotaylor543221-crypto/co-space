@@ -6,10 +6,11 @@ import Management from "@/components/landing/Management";
 import PricingSection from "@/components/landing/PricingSection";
 import FinalCta from "@/components/landing/FinalCta";
 import Footer from "@/components/landing/Footer";
+import LandingEffects from "@/components/landing/LandingEffects";
 
 export default function LandingPage() {
   return (
-    <div className="flex min-h-screen flex-col">
+    <LandingEffects>
       <Navbar />
       <main className="flex-1">
         <Hero />
@@ -20,6 +21,6 @@ export default function LandingPage() {
         <FinalCta />
       </main>
       <Footer />
-    </div>
+    </LandingEffects>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Menu, X, ArrowUpRight } from "lucide-react";
 import Brand from "@/components/layout/brand";
@@ -11,6 +11,30 @@ import { useI18n } from "@/lib/i18n";
 export default function Navbar() {
   const { t } = useI18n();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState("");
+
+  useEffect(() => {
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const sections = Array.from(document.querySelectorAll<HTMLElement>("main section[id]"));
+      const current = sections.filter((section) => section.getBoundingClientRect().top <= 160).at(-1);
+      setActiveSection(current ? `#${current.id}` : "");
+    };
+    const onScroll = () => { if (!frame) frame = requestAnimationFrame(update); };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => { window.removeEventListener("scroll", onScroll); cancelAnimationFrame(frame); };
+  }, []);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const close = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileMenuOpen(false);
+    };
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, [mobileMenuOpen]);
 
   const navLinks = [
     { label: t("Espacios"), href: "#espacios" },
@@ -34,6 +58,7 @@ export default function Navbar() {
             <a
               key={link.href}
               href={link.href}
+              aria-current={activeSection === link.href ? "location" : undefined}
               className="text-xs font-medium text-muted transition hover:text-ink"
             >
               {link.label}
@@ -78,6 +103,7 @@ export default function Navbar() {
             <a
               key={link.href}
               href={link.href}
+              aria-current={activeSection === link.href ? "location" : undefined}
               onClick={() => setMobileMenuOpen(false)}
               className="text-sm font-medium text-ink transition hover:text-accent"
             >

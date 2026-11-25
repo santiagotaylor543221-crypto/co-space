@@ -1,19 +1,9 @@
-import { NextResponse } from 'next/server';
-import { SpaceType } from '@prisma/client';
 import { z } from 'zod';
+import { NextResponse } from 'next/server';
+import { workspaceSchema } from '@/lib/workspace-schema';
 import { prisma } from '@/lib/prisma';
 
-const workspaceUpdateSchema = z
-  .object({
-    name: z.string().trim().min(1).optional(),
-    description: z.string().trim().min(1).optional(),
-    type: z.nativeEnum(SpaceType).optional(),
-    capacity: z.number().int().positive().optional(),
-    pricePerHour: z.number().positive().optional(),
-    imageUrl: z.string().trim().min(1).optional(),
-    isActive: z.boolean().optional(),
-  })
-  .refine((data) => Object.keys(data).length > 0, 'Debes enviar al menos un campo');
+const workspaceUpdateSchema = workspaceSchema.partial().extend({ isActive: z.boolean().optional() }).refine((data) => Object.keys(data).length > 0, 'Debes enviar al menos un campo');
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -24,7 +14,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     const { id } = await params;
     const input = workspaceUpdateSchema.safeParse(await request.json());
     if (!input.success) {
-      return NextResponse.json({ error: 'Datos del espacio inválidos' }, { status: 400 });
+      return NextResponse.json({ error: 'Revisa los campos del espacio.', fieldErrors: input.error.flatten().fieldErrors }, { status: 400 });
     }
 
     const existing = await prisma.workspace.findUnique({ where: { id } });

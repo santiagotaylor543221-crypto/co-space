@@ -31,3 +31,91 @@ body {
   color: var(--color-ink);
   font-family: var(--font-body);
 }
+
+html:has(.landing) {
+  scroll-behavior: smooth;
+}
+
+.landing :is(a, button):focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 5px;
+}
+.landing :is(a, button) { -webkit-tap-highlight-color: transparent; }
+.landing a[aria-current="location"] {
+  color: var(--color-ink);
+  text-decoration: underline;
+  text-decoration-color: var(--color-accent);
+  text-underline-offset: 8px;
+  text-decoration-thickness: 2px;
+}
+.landing :is(a.bg-accent, a.border, button) {
+  transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+.landing :is(a.bg-accent, a.border, button):active { transform: scale(.98); }
+.landing .reveal-pending { opacity: 0; transform: translateY(14px); }
+.landing .reveal-visible { animation: landing-reveal 550ms ease both; }
+.landing li:nth-child(2) { --reveal-delay: 70ms; }
+.landing li:nth-child(3) { --reveal-delay: 140ms; }
+.landing li.reveal-visible { animation-delay: var(--reveal-delay, 0ms); }
+.hero-photo { animation: landing-reveal 650ms ease both; }
+.hero-photo img {
+  transform: translate(var(--photo-x, 0px), var(--photo-y, 0px)) scale(1.035);
+  transition: transform 700ms ease-out;
+  animation: hero-zoom 1100ms ease-out;
+}
+.space-card { transition: box-shadow 220ms ease, translate 220ms ease; }
+.space-card img { transition: transform 450ms ease; }
+.landing a svg { transition: transform 180ms ease; }
+.landing #administracion li svg {
+  box-sizing: content-box;
+  padding: 8px;
+  border-radius: 10px;
+  transition: background-color 200ms ease, transform 200ms ease;
+}
+.landing #como-funciona ol { position: relative; }
+.landing #como-funciona li { position: relative; }
+.landing #como-funciona li svg { color: var(--color-accent); }
+.price-value { display: inline-block; animation: price-change 250ms ease-out; }
+.landing #landing-mobile-menu:not([hidden]) { animation: landing-reveal 200ms ease-out; }
+.pricing-card:has(> span) { animation: recommended-border 900ms ease-out; }
+.closing-panel.reveal-visible > img { animation: closing-zoom 2400ms ease-out both; }
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .landing :is(a.bg-accent, a.border):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px #11111112;
+  }
+  .space-card:is(:hover, :focus-within) { translate: 0 -4px; box-shadow: 0 12px 26px #1111110d; }
+  .space-card:is(:hover, :focus-within) img { transform: scale(1.035); }
+  .landing a:hover svg { transform: translateX(3px); }
+  .landing #administracion li:hover svg { background: var(--color-accent-soft); transform: translateY(-1px); }
+}
+@media (min-width: 768px) {
+  .landing #como-funciona li:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    z-index: 1;
+    right: -25px;
+    top: 36px;
+    width: 24px;
+    height: 2px;
+    background: var(--color-accent);
+    transform-origin: left;
+  }
+  .landing #como-funciona li.reveal-visible::after { animation: step-line 650ms ease both; animation-delay: 250ms; }
+}
+@keyframes landing-reveal { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes hero-zoom { from { transform: scale(1.065); } }
+@keyframes price-change { from { opacity: .35; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes recommended-border { from { box-shadow: 0 0 0 5px var(--color-accent-soft); } to { box-shadow: 0 0 0 0 transparent; } }
+@keyframes step-line { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes closing-zoom { from { transform: scale(1.035); } to { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) {
+  html:has(.landing) { scroll-behavior: auto; }
+  .landing *, .landing *::before, .landing *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  .landing .reveal-pending { opacity: 1; transform: none; }
+  .hero-photo img { transform: none; }
+}

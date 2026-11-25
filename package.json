@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test:workspaces": "node tests/workspaces.test.mjs",
     "seed": "prisma db seed",
     "postinstall": "prisma generate"
   },
@@ -22,6 +23,7 @@
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-hot-toast": "^2.6.1",
+    "sharp": "^0.35.5",
     "tsx": "^4.23.15",
     "zod": "^4.6.7"
   },

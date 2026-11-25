@@ -220,3 +220,30 @@ GitHub: santiagotaylor543221-crypto
   <strong>CoSpace</strong><br>
   Plataforma de reservas de espacios de coworking.
 </p>
+
+## Administración de espacios y fotografías
+
+La sección Espacios permite buscar, filtrar por estado/tipo, ordenar y crear o editar con vista previa. Las ediciones usan `PATCH /api/admin/workspaces/:id`. Archivar conserva las reservas existentes y bloquea nuevas reservas; no cancela las anteriores.
+
+El formulario incluye ilustraciones y subida de JPG, PNG o WebP (máximo 5 MB y 25 megapíxeles). El servidor valida el contenido, elimina metadatos al recodificar y guarda WebP de hasta 1600 × 1200. La subida requiere sesión ADMIN. Las fotografías se sirven públicamente para mostrarlas en el catálogo.
+
+En desarrollo, las fotos se guardan en `data/workspace-images`, excluido de Git y de la imagen Docker. La variable `WORKSPACE_UPLOAD_DIR` permite cambiar la carpeta. El Compose local monta un volumen persistente.
+
+En el Compose de producción de EC2, añadir al servicio `app` y a los volúmenes de nivel superior:
+
+```yaml
+services:
+  app:
+    volumes:
+      - workspace_images:/app/data/workspace-images
+volumes:
+  workspace_images:
+```
+
+El Dockerfile prepara esa carpeta para el usuario `node`. El volumen conserva las fotos al recrear el contenedor; incluirlo en las copias de seguridad. No ejecutar `docker compose down -v` si se quieren conservar. Esta configuración está pensada para una sola instancia EC2; varias réplicas necesitan un almacenamiento compartido.
+
+En Nginx, configurar `client_max_body_size 6m;` en el bloque del sitio para permitir fotos de 5 MB; el valor predeterminado de Nginx puede rechazarlas antes de llegar a la aplicación. Estos cambios requieren aplicarse al despliegue de producción; no se han ejecutado desde el repositorio.
+
+Las imágenes no se borran automáticamente al sustituirlas o archivar un espacio. Una subida completada cuyo guardado de datos falle también puede dejar un archivo sin referencia; conservarlos evita eliminar fotos usadas y permite una limpieza posterior con comprobación de referencias.
+
+Comprobaciones de espacios y fotos, sin conexión a la base de datos: `npm run test:workspaces`.

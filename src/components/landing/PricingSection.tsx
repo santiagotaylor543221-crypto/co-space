@@ -54,16 +54,17 @@ export default function PricingSection() {
             return (
               <Card
                 key={plan.id}
-                className={`flex flex-col rounded-3xl bg-surface p-6 lg:p-8 ${
+                className={`pricing-card relative flex flex-col rounded-3xl bg-surface p-6 lg:p-8 ${
                   plan.isPopular ? "border-2 border-accent" : "border border-line"
                 }`}
               >
+                {plan.isPopular && <span className="mb-4 w-fit rounded-full bg-accent-soft px-3 py-1 text-xs font-semibold">{t("Recomendado")}</span>}
                 <h3 className="font-heading text-2xl font-semibold">{t(plan.nameKey)}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted">{t(plan.descKey)}</p>
 
                 <div className="mt-auto border-b border-line pt-6 pb-5">
                   <div className="flex flex-wrap items-baseline gap-2">
-                    <span className="font-heading text-4xl font-semibold">{formatPrice(price)}</span>
+                    <span key={String(isAnnual)} className="price-value font-heading text-4xl font-semibold">{formatPrice(price)}</span>
                     <span className="text-sm text-muted">/ {t(isAnnual ? "año" : "mes")}</span>
                   </div>
                   <p className="mt-1 text-sm text-muted">
@@ -71,6 +72,11 @@ export default function PricingSection() {
                       ? t("Equivale a {price} al mes").replace("{price}", formatPrice(plan.annualMonthlyPrice))
                       : t("Pago mensual")}
                   </p>
+                  {isAnnual && plan.monthlyPrice > 0 && (
+                    <p className="mt-2 text-xs font-semibold text-success">
+                      {t("Ahorra {percent}%").replace("{percent}", String(Math.round((1 - plan.annualMonthlyPrice / plan.monthlyPrice) * 100)))}
+                    </p>
+                  )}
                 </div>
 
                 <ul className="mt-5 space-y-3 text-sm md:min-h-32">

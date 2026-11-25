@@ -1,16 +1,6 @@
 import { NextResponse } from 'next/server';
-import { SpaceType } from '@prisma/client';
-import { z } from 'zod';
+import { workspaceSchema } from '@/lib/workspace-schema';
 import { prisma } from '@/lib/prisma';
-
-const workspaceSchema = z.object({
-  name: z.string().trim().min(1, 'El nombre es obligatorio'),
-  description: z.string().trim().min(1, 'La descripción es obligatoria'),
-  type: z.nativeEnum(SpaceType),
-  capacity: z.number().int().positive(),
-  pricePerHour: z.number().positive(),
-  imageUrl: z.string().trim().min(1, 'La imagen es obligatoria'),
-});
 
 export async function GET() {
   try {
@@ -29,7 +19,7 @@ export async function POST(request: Request) {
   try {
     const input = workspaceSchema.safeParse(await request.json());
     if (!input.success) {
-      return NextResponse.json({ error: 'Datos del espacio inválidos' }, { status: 400 });
+      return NextResponse.json({ error: 'Revisa los campos del espacio.', fieldErrors: input.error.flatten().fieldErrors }, { status: 400 });
     }
 
     const workspace = await prisma.workspace.create({ data: input.data });

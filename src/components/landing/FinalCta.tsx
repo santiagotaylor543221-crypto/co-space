@@ -10,7 +10,7 @@ export default function FinalCta() {
 
   return (
     <section className="mx-auto max-w-7xl px-6 py-16 lg:px-8 lg:py-24">
-      <div className="relative isolate overflow-hidden rounded-3xl bg-stone-800 px-6 py-20 text-center text-white sm:px-12 sm:py-28">
+      <div className="closing-panel relative isolate overflow-hidden rounded-3xl bg-stone-800 px-6 py-20 text-center text-white sm:px-12 sm:py-28">
         <Image
           src="/images/landing/closing.webp"
           alt=""
