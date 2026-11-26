@@ -24,5 +24,5 @@ export function catalogWorkspaceImage(
   if (imageUrl && !defaultImage.test(imageUrl)) return imageUrl;
 
   const photo = namedPhotos.get(name.trim().toLowerCase()) ?? defaultPhoto[type];
-  return `/images/catalog/${photo}.webp`;
+  return `/api/catalog-images/${photo}.webp`;
 }
