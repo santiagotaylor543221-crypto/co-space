@@ -1,7 +1,7 @@
+import { protectApi } from '@/lib/auth/api';
 import { MAX_IMAGE_BYTES, storePhoto } from "@/lib/workspace-upload";
 
-// /api/admin/* is protected by the ADMIN role check in proxy.ts.
-export async function POST(request: Request) {
+export const POST = protectApi('ADMIN', async (_user, request: Request) => {
   if (!["image/jpeg", "image/png", "image/webp"].includes(request.headers.get("content-type") || "")) {
     return Response.json({ error: "Usa una foto JPG, PNG o WebP." }, { status: 415 });
   }
@@ -32,4 +32,4 @@ export async function POST(request: Request) {
     }
     return Response.json({ error: "No se pudo procesar la foto. Usa un JPG, PNG o WebP válido de hasta 25 megapíxeles." }, { status: 400 });
   } finally { reader.releaseLock(); }
-}
+});

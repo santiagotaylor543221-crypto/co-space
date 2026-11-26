@@ -1,3 +1,4 @@
+import { protectApi } from '@/lib/auth/api';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import {
@@ -8,13 +9,8 @@ import {
   BOOKING_OPEN_HOUR,
 } from '@/lib/booking-hours';
 import { confirmedBookingOverlap } from '@/lib/booking-overlap';
-import { verifyAccessToken } from '@/utils/auth';
 
-export async function GET(request: NextRequest) {
-  const token = request.cookies.get('access_token')?.value;
-  const user = token ? await verifyAccessToken(token) : null;
-  if (!user?.id) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-
+export const GET = protectApi(null, async (user, request: NextRequest) => {
   const now = new Date();
   const days = bookingDays(now);
   const workspaceId = request.nextUrl.searchParams.get('workspaceId');
@@ -50,4 +46,4 @@ export async function GET(request: NextRequest) {
     console.error('Error al consultar disponibilidad:', error);
     return NextResponse.json({ error: 'No se pudo consultar la disponibilidad.' }, { status: 500 });
   }
-}
+});

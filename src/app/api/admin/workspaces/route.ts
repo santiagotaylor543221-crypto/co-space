@@ -1,8 +1,9 @@
+import { protectApi } from '@/lib/auth/api';
 import { NextResponse } from 'next/server';
 import { workspaceSchema } from '@/lib/workspace-schema';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export const GET = protectApi('ADMIN', async () => {
   try {
     const workspaces = await prisma.workspace.findMany({
       orderBy: [{ isActive: 'desc' }, { name: 'asc' }],
@@ -13,9 +14,9 @@ export async function GET() {
     console.error('Error al listar espacios para administración:', error);
     return NextResponse.json({ error: 'Error al cargar los espacios' }, { status: 500 });
   }
-}
+});
 
-export async function POST(request: Request) {
+export const POST = protectApi('ADMIN', async (_user, request: Request) => {
   try {
     const input = workspaceSchema.safeParse(await request.json());
     if (!input.success) {
@@ -28,4 +29,4 @@ export async function POST(request: Request) {
     console.error('Error al crear espacio:', error);
     return NextResponse.json({ error: 'Error al crear el espacio' }, { status: 500 });
   }
-}
+});

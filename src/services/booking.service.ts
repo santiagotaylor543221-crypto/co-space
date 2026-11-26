@@ -157,10 +157,20 @@ export const bookingService = {
       throw { status: 400, message: 'Debes cancelar con al menos 2 horas de anticipación.' };
     }
 
-    // Regla 11: Soft-cancel (No eliminar, cambiar estado)
-    return await prisma.booking.update({
-      where: { id: bookingId },
-      data: { status: BookingStatus.CANCELLED },
+    // Revalidar propietario y horario en la escritura si hubo una edición concurrente.
+    return writeBooking(async (db) => {
+      const cancelled = await db.booking.updateMany({
+        where: {
+          id: bookingId,
+          startTime: booking.startTime,
+          ...(userRole === Role.ADMIN ? {} : { userId }),
+        },
+        data: { status: BookingStatus.CANCELLED },
+      });
+      if (cancelled.count === 0) {
+        throw { status: 409, message: 'La reserva cambió. Actualiza tus reservas.' };
+      }
+      return db.booking.findUniqueOrThrow({ where: { id: bookingId } });
     });
   }
 };

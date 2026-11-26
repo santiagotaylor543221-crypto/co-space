@@ -1,7 +1,8 @@
+import { protectApi } from '@/lib/auth/api';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export const GET = protectApi('ADMIN', async () => {
   try {
     const users = await prisma.user.findMany({
       where: { role: 'USER' },
@@ -14,4 +15,4 @@ export async function GET() {
     console.error('Error al listar usuarios para administración:', error);
     return NextResponse.json({ error: 'Error al cargar los usuarios' }, { status: 500 });
   }
-}
+});

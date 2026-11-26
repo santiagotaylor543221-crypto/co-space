@@ -24,6 +24,9 @@ function load(relative, mocks = {}) {
   );
   return loadedModule.exports;
 }
+// Las comprobaciones del guard se cubren en tests/auth.test.mjs.
+const adminGuard = { protectApi: (_role, handler) => (request, ...args) => handler({ role: 'ADMIN' }, request, ...args) };
+
 const schema = load("src/lib/workspace-schema.ts");
 const upload = load("src/lib/workspace-upload.ts");
 const valid = { name: "  Sala Horizonte  ", description: "Una sala tranquila", type: "MEETING_ROOM", capacity: 6, pricePerHour: 15.5, imageUrl: "/images/spaces/meeting-room-1.svg" };
@@ -43,7 +46,7 @@ test("create then PATCH edits and archives an existing workspace without deletin
     findUnique: async ({ where }) => rows.get(where.id),
     update: async ({ where, data }) => { const record = { ...rows.get(where.id), ...data }; rows.set(where.id, record); return record; },
   } };
-  const mocks = { "@/lib/prisma": { prisma }, "@/lib/workspace-schema": schema };
+  const mocks = { "@/lib/auth/api": adminGuard, "@/lib/prisma": { prisma }, "@/lib/workspace-schema": schema };
   const create = load("src/app/api/admin/workspaces/route.ts", mocks);
   const edit = load("src/app/api/admin/workspaces/[id]/route.ts", mocks);
   const request = (body, method = "POST") => new Request("http://localhost/api/admin/workspaces", { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -69,7 +72,7 @@ test("photo upload normalizes real pixels, persists and serves them, rejects bad
   process.env.WORKSPACE_UPLOAD_DIR = directory;
   try {
     const jpeg = await sharp({ create: { width: 40, height: 30, channels: 3, background: "#ff5b2e" } }).jpeg().toBuffer();
-    const api = load("src/app/api/admin/workspace-images/route.ts", { "@/lib/workspace-upload": upload });
+    const api = load("src/app/api/admin/workspace-images/route.ts", { "@/lib/auth/api": adminGuard, "@/lib/workspace-upload": upload });
     const request = (bytes, type = "image/jpeg", headers = {}) => new Request("http://localhost/api/admin/workspace-images", { method: "POST", headers: { "Content-Type": type, ...headers }, body: bytes });
     const response = await api.POST(request(jpeg));
     assert.equal(response.status, 201);

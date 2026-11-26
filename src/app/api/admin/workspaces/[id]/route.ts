@@ -1,3 +1,4 @@
+import { protectApi } from '@/lib/auth/api';
 import { z } from 'zod';
 import { NextResponse } from 'next/server';
 import { workspaceSchema } from '@/lib/workspace-schema';
@@ -9,7 +10,7 @@ interface RouteContext {
   params: Promise<{ id: string }>;
 }
 
-export async function PATCH(request: Request, { params }: RouteContext) {
+export const PATCH = protectApi('ADMIN', async (_user, request: Request, { params }: RouteContext) => {
   try {
     const { id } = await params;
     const input = workspaceUpdateSchema.safeParse(await request.json());
@@ -31,9 +32,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     console.error('Error al actualizar espacio:', error);
     return NextResponse.json({ error: 'No se pudo actualizar el espacio' }, { status: 500 });
   }
-}
+});
 
-export async function DELETE(_request: Request, { params }: RouteContext) {
+export const DELETE = protectApi('ADMIN', async (_user, _request: Request, { params }: RouteContext) => {
   try {
     const { id } = await params;
     const existing = await prisma.workspace.findUnique({ where: { id } });
@@ -51,4 +52,4 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
     console.error('Error al archivar espacio:', error);
     return NextResponse.json({ error: 'No se pudo archivar el espacio' }, { status: 500 });
   }
-}
+});

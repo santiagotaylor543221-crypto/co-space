@@ -1,79 +1,41 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { generateTokens, setAuthCookies } from '@/utils/auth';
-import { z } from 'zod';
+import { setAuthCookies } from '@/utils/auth';
+import { findLoginUser, loginSchema, normalizeEmail, readCredentials } from '@/lib/auth/credentials';
+import { authError, authUnavailable, checkOrigin, privateResponse } from '@/lib/auth/http';
+import { clearLoginAttempts, enforceRateLimit } from '@/lib/auth/rate-limit';
+import { startSession } from '@/lib/auth/session';
 
-// Validación estricta de entrada con Zod
-const loginSchema = z.object({
-  email: z.string().email('Email inválido'),
-  password: z.string().min(1, 'La contraseña es requerida'),
-});
+// Hash ficticio con el mismo coste que los hashes generados en el registro.
+const dummyHash = '$2b$10$AAJgEjODBExtbwf6fmRgiOn0a1znPoKFp8BAitOH6.IenLF7JYLD6';
 
-export async function POST(req: NextRequest) {
+export async function POST(request: Request) {
   try {
-    let body: unknown;
-    try {
-      body = await req.json();
-    } catch {
-      return NextResponse.json({ error: 'JSON inválido' }, { status: 400 });
-    }
+    const blocked = checkOrigin(request) ?? enforceRateLimit('login', request);
+    if (blocked) return blocked;
+    const body = await readCredentials(request);
+    if (body instanceof Response) return body;
+    const input = loginSchema.safeParse(body.value);
+    if (!input.success) return authError('Datos inválidos', 400);
 
-    const parsedData = loginSchema.safeParse(body);
+    const { email, password } = input.data;
+    const identity = normalizeEmail(email);
+    const accountLimit = enforceRateLimit('login', request, identity);
+    if (accountLimit) return accountLimit;
 
-    if (!parsedData.success) {
-      return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 });
-    }
+    const user = await findLoginUser(email);
+    const passwordMatches = await bcrypt.compare(password, user?.password ?? dummyHash);
+    if (!user || !passwordMatches) return authError('Credenciales incorrectas', 401);
 
-    const { email, password } = parsedData.data;
-
-    // 1. Buscar usuario
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: 'Credenciales incorrectas' }, { status: 401 });
-    }
-
-    // 2. Verificar contraseña
-    const isValidPassword = await bcrypt.compare(password, user.password);
-
-    if (!isValidPassword) {
-      return NextResponse.json({ error: 'Credenciales incorrectas' }, { status: 401 });
-    }
-
-    // 3. Generar ambos tokens
-    const payload = {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-    };
-    const { accessToken, refreshToken } = await generateTokens(payload);
-
-    // 4. Hashear el refresh token antes de guardarlo en BD
-    const salt = await bcrypt.genSalt(10);
-    const hashedRefreshToken = await bcrypt.hash(refreshToken, salt);
-
-    // 5. Guardar el hash en el usuario
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { refreshTokenHash: hashedRefreshToken },
-    });
-
-    // 6. Inyectar las cookies seguras
-    await setAuthCookies(accessToken, refreshToken);
-
-    return NextResponse.json(
-      {
-        message: 'Login exitoso',
-        user: { id: user.id, name: user.name, email: user.email, role: user.role }
-      },
-      { status: 200 }
-    );
-
+    const tokens = await startSession(user.id);
+    clearLoginAttempts(request, identity);
+    const response = privateResponse(NextResponse.json({
+      message: 'Login exitoso',
+      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+    }));
+    setAuthCookies(response, tokens);
+    return response;
   } catch (error) {
-    console.error('Error en login:', error);
-    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+    return authUnavailable('login', error);
   }
 }

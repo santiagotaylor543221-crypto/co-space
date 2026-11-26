@@ -1,3 +1,4 @@
+import { protectApi } from '@/lib/auth/api';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
@@ -14,7 +15,7 @@ interface RouteContext {
   params: Promise<{ id: string }>;
 }
 
-export async function PATCH(request: Request, { params }: RouteContext) {
+export const PATCH = protectApi('ADMIN', async (_user, request: Request, { params }: RouteContext) => {
   try {
     const { id } = await params;
     const input = updateBookingSchema.safeParse(await request.json());
@@ -45,4 +46,4 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         : 'No se pudo actualizar la reserva';
     return NextResponse.json({ error: message }, { status });
   }
-}
+});

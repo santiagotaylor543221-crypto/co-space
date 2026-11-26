@@ -1,3 +1,4 @@
+import { protectApi } from '@/lib/auth/api';
 import { NextResponse } from 'next/server';
 import { BookingStatus } from '@prisma/client';
 import { z } from 'zod';
@@ -11,7 +12,7 @@ const createBookingSchema = z.object({
   endTime: z.string().datetime(),
 });
 
-export async function GET() {
+export const GET = protectApi('ADMIN', async () => {
   try {
     // Traemos las reservas confirmadas para que las canceladas no reaparezcan.
     const allBookings = await prisma.booking.findMany({
@@ -28,9 +29,9 @@ export async function GET() {
     console.error('Error en admin/bookings:', error);
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
   }
-}
+});
 
-export async function POST(request: Request) {
+export const POST = protectApi('ADMIN', async (_user, request: Request) => {
   try {
     const input = createBookingSchema.safeParse(await request.json());
     if (!input.success) {
@@ -61,4 +62,4 @@ export async function POST(request: Request) {
         : 'No se pudo crear la reserva';
     return NextResponse.json({ error: message }, { status });
   }
-}
+});

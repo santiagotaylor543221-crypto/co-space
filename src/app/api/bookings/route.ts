@@ -1,7 +1,6 @@
+import { protectApi } from '@/lib/auth/api';
 import { NextRequest, NextResponse } from 'next/server';
 import { bookingService } from '@/services/booking.service';
-import { cookies } from 'next/headers';
-import { verifyAccessToken } from '@/utils/auth';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 
@@ -12,22 +11,8 @@ const createBookingSchema = z.object({
   endTime: z.string().datetime({ message: 'Formato de fecha de fin inválido' }),
 });
 
-export async function POST(req: NextRequest) {
+export const POST = protectApi(null, async (user, req: NextRequest) => {
   try {
-    // 1. Seguridad: Extraer y verificar el token de la cookie
-    const cookieStore = await cookies();
-    const token = cookieStore.get('access_token')?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: 'No autorizado. Inicia sesión.' }, { status: 401 });
-    }
-
-    const payload = await verifyAccessToken(token);
-    if (!payload) {
-      return NextResponse.json({ error: 'Token inválido o expirado.' }, { status: 401 });
-    }
-
-    // 2. Validación de datos de entrada
     const body = await req.json();
     const parsedData = createBookingSchema.safeParse(body);
 
@@ -37,7 +22,7 @@ export async function POST(req: NextRequest) {
 
     // 3. Delegar la lógica pesada al Service
     const booking = await bookingService.createBooking({
-      userId: payload.id as string,
+      userId: user.id,
       workspaceId: parsedData.data.workspaceId,
       startTime: parsedData.data.startTime,
       endTime: parsedData.data.endTime,
@@ -62,22 +47,14 @@ export async function POST(req: NextRequest) {
         : 'Error interno del servidor';
     return NextResponse.json({ error: message }, { status });
   }
-}
+});
 
 
 
-export async function GET() {
+export const GET = protectApi(null, async (user) => {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('access_token')?.value;
-
-    if (!token) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-
-    const payload = await verifyAccessToken(token);
-    if (!payload?.id) return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
-
     const userBookings = await prisma.booking.findMany({
-      where: { userId: payload.id },
+      where: { userId: user.id },
       select: {
         id: true,
         status: true,
@@ -92,9 +69,9 @@ export async function GET() {
       orderBy: { startTime: 'desc' }
     });
 
-    return NextResponse.json(userBookings, { headers: { 'Cache-Control': 'private, no-store' } });
+    return NextResponse.json(userBookings);
   } catch (error: unknown) {
     console.error('Error obteniendo reservas:', error);
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
   }
-}
+});

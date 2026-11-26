@@ -1,65 +1,49 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import { verifyAccessToken } from '@/utils/auth';
+import { NextResponse, type NextRequest } from 'next/server';
+import { ACCESS_COOKIE, clearAuthCookies, REFRESH_COOKIE, verifyRefreshToken } from '@/utils/auth';
+import { authUnavailable, pageRedirect, privateResponse } from '@/lib/auth/http';
+import { LOGIN_PATH, pageAccess, panelPath, renewalDestination, RENEW_PATH } from '@/lib/auth/paths';
+import { getAccessSession, getRefreshSession } from '@/lib/auth/session';
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const policy = pageAccess(pathname);
+  if (policy === 'public') return privateResponse(NextResponse.next());
 
-  // 1. Definir qué rutas están protegidas
-  const isPrivatePath =
-    pathname.startsWith('/dashboard') ||
-    pathname.startsWith('/mis-reservas') ||
-    pathname.startsWith('/api/bookings');
-  const isAdminPath = pathname.startsWith('/admin') || pathname.startsWith('/api/admin');
-
-  // Si es ruta pública, pasa directo
-  if (!isPrivatePath && !isAdminPath) {
-    return NextResponse.next();
-  }
-
-  // 2. Extraer token de la cookie
-  const token = request.cookies.get('access_token')?.value;
-
-  if (!token) {
-    return handleUnauthorized(request);
-  }
-
-  // 3. Verificar el token usando jose (compatible con Edge)
-  const payload = await verifyAccessToken(token);
-
-  if (!payload) {
-    return handleUnauthorized(request);
-  }
-
-  // 4. Control de Acceso por Roles (RBAC) para el Admin
-  if (isAdminPath && payload.role !== 'ADMIN') {
-    if (pathname.startsWith('/api/')) {
-      return NextResponse.json({ error: 'Acceso denegado: Se requiere rol ADMIN' }, { status: 403 });
+  try {
+    const access = request.cookies.get(ACCESS_COOKIE)?.value;
+    const refresh = request.cookies.get(REFRESH_COOKIE)?.value;
+    const session = await getAccessSession(access);
+    if (session) {
+      if (policy === 'guest' || (policy === 'admin' && session.role !== 'ADMIN')) {
+        return pageRedirect(request, panelPath(session.role));
+      }
+      return privateResponse(NextResponse.next());
     }
-    // Si intenta entrar a /admin desde el navegador sin ser admin, al dashboard
-    return NextResponse.redirect(new URL('/dashboard', request.url));
-  }
 
-  // 5. Todo en orden, permitir acceso
-  return NextResponse.next();
+    let clearCookies = Boolean(access || refresh);
+    if (refresh) {
+      const claims = await verifyRefreshToken(refresh);
+      if (claims) {
+        const { state } = await getRefreshSession(claims, refresh);
+        if (state === 'active') {
+          const params = new URLSearchParams({ returnTo: renewalDestination(pathname) });
+          return pageRedirect(request, `${RENEW_PATH}?${params}`);
+        }
+        // Una respuesta con un token ya rotado no debe borrar las cookies recién emitidas.
+        if (state === 'rotated') clearCookies = false;
+      }
+    }
+
+    const response = policy === 'guest'
+      ? privateResponse(NextResponse.next())
+      : pageRedirect(request, LOGIN_PATH);
+    if (clearCookies) clearAuthCookies(response);
+    return response;
+  } catch (error) {
+    return authUnavailable('protección de página', error);
+  }
 }
 
-// Función para manejar el rechazo limpiamente
-function handleUnauthorized(request: NextRequest) {
-  if (request.nextUrl.pathname.startsWith('/api/')) {
-    return NextResponse.json({ error: 'No autorizado. Inicia sesión.' }, { status: 401 });
-  }
-  // Redirigir al login si entra desde la interfaz web
-  return NextResponse.redirect(new URL('/login', request.url));
-}
-
-// 6. Configurar en qué rutas se dispara el proxy para ahorrar recursos
 export const config = {
-  matcher: [
-    '/dashboard/:path*',
-    '/mis-reservas/:path*',
-    '/admin/:path*',
-    '/api/bookings/:path*',
-    '/api/admin/:path*'
-  ],
+  matcher: ['/login', '/register', '/sesion/renovar', '/dashboard/:path*', '/mis-reservas', '/admin/:path*'],
 };

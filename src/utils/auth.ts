@@ -1,102 +1,101 @@
-import { SignJWT, jwtVerify } from 'jose';
-import { cookies } from 'next/headers';
+import { randomUUID } from 'node:crypto';
+import { SignJWT, jwtVerify, errors } from 'jose';
+import type { NextResponse } from 'next/server';
+import { z } from 'zod';
 
-// Tipado estricto exigido por la rúbrica (Cero any)
-export interface TokenPayload {
-  id: string;
-  email: string;
-  role: string;
-  [key: string]: unknown;
+export const ACCESS_COOKIE = 'access_token';
+export const REFRESH_COOKIE = 'refresh_token';
+export const ACCESS_TTL = 15 * 60;
+export const REFRESH_TTL = 7 * 24 * 60 * 60;
+
+const issuer = 'cospace';
+const algorithm = 'HS256';
+const tokenClaims = z.object({
+  sub: z.uuid(),
+  sid: z.uuid(),
+  jti: z.uuid(),
+  exp: z.int(),
+});
+
+type TokenType = 'access' | 'refresh';
+type Claims = z.infer<typeof tokenClaims>;
+
+function tokenKey(type: TokenType) {
+  const access = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET;
+  const refresh = process.env.JWT_REFRESH_SECRET;
+  if (!access || !refresh || Buffer.byteLength(access) < 32 || Buffer.byteLength(refresh) < 32 || access === refresh) {
+    throw new Error('Configuración de claves JWT inválida');
+  }
+  return new TextEncoder().encode(type === 'access' ? access : refresh);
 }
 
-const getAccessSecret = () => {
-  const secret = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET;
-  if (!secret) {
-    throw new Error('JWT_ACCESS_SECRET is not configured');
-  }
-  return new TextEncoder().encode(secret);
-};
-
-const getRefreshSecret = () => {
-  const secret = process.env.JWT_REFRESH_SECRET;
-  if (!secret) {
-    throw new Error('JWT_REFRESH_SECRET is not configured');
-  }
-  return new TextEncoder().encode(secret);
-};
-
-/**
- * Genera ambos tokens con sus respectivos tiempos de expiración
- */
-export async function generateTokens(payload: { id: string; email: string; role: string }) {
-  const accessToken = await new SignJWT(payload)
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setExpirationTime('15m') // Requisito: Access Token de corta duración
-    .sign(getAccessSecret());
-
-  const refreshToken = await new SignJWT(payload)
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setExpirationTime('7d') // Requisito: Refresh Token de larga duración
-    .sign(getRefreshSecret());
-
-  return { accessToken, refreshToken };
+function tokenType(type: TokenType) {
+  return `cospace-${type}+jwt`;
 }
 
-/**
- * Verifica el Access Token
- */
-export async function verifyAccessToken(token: string): Promise<TokenPayload | null> {
+export async function generateTokens(userId: string, sessionId: string, sessionExpiresAt: number) {
+  const now = Math.floor(Date.now() / 1000);
+  const accessExpiresAt = Math.min(now + ACCESS_TTL, sessionExpiresAt);
+  const sign = (type: TokenType, expiresAt: number) => new SignJWT({ sid: sessionId })
+    .setProtectedHeader({ alg: algorithm, typ: tokenType(type) })
+    .setSubject(userId)
+    .setIssuer(issuer)
+    .setAudience(type)
+    .setJti(randomUUID())
+    .setIssuedAt(now)
+    .setExpirationTime(expiresAt)
+    .sign(tokenKey(type));
+
+  const [accessToken, refreshToken] = await Promise.all([
+    sign('access', accessExpiresAt),
+    sign('refresh', sessionExpiresAt),
+  ]);
+  return { accessToken, refreshToken, accessExpiresAt, sessionExpiresAt };
+}
+
+async function verifyToken(token: string | undefined, type: TokenType): Promise<Claims | null> {
+  if (!token || token.length > 2048) return null;
+  const key = tokenKey(type);
   try {
-    const { payload } = await jwtVerify(token, getAccessSecret());
-    return payload as TokenPayload;
-  } catch {
-    return null; // Si expira o es inválido, retorna null para que el middleware actúe
+    const { payload } = await jwtVerify(token, key, {
+      algorithms: [algorithm],
+      issuer,
+      audience: type,
+      typ: tokenType(type),
+      requiredClaims: ['sub', 'sid', 'jti', 'iat', 'exp'],
+      maxTokenAge: type === 'access' ? ACCESS_TTL : REFRESH_TTL,
+    });
+    const parsed = tokenClaims.safeParse(payload);
+    return parsed.success ? parsed.data : null;
+  } catch (error) {
+    if (error instanceof errors.JOSEError) return null;
+    throw error;
   }
 }
 
-/**
- * Verifica el Refresh Token
- */
-export async function verifyRefreshToken(token: string): Promise<TokenPayload | null> {
-  try {
-    const { payload } = await jwtVerify(token, getRefreshSecret());
-    return payload as TokenPayload;
-  } catch {
-    return null;
-  }
-}
+export const verifyAccessToken = (token?: string) => verifyToken(token, 'access');
+export const verifyRefreshToken = (token?: string) => verifyToken(token, 'refresh');
 
-/**
- * Inyecta las cookies de forma segura cumpliendo los requisitos técnicos del PDF
- */
-export async function setAuthCookies(accessToken: string, refreshToken: string) {
-  const cookieStore = await cookies();
-  const isProduction = process.env.NODE_ENV === 'production';
-
-  cookieStore.set('access_token', accessToken, {
-    httpOnly: true, // Prohíbe el acceso desde document.cookie
-    secure: isProduction, // Solo HTTPS en producción
-    sameSite: 'lax', // Protección CSRF
-    path: '/',
-    maxAge: 15 * 60, // 15 minutos en segundos
-  });
-
-  cookieStore.set('refresh_token', refreshToken, {
+function cookieOptions() {
+  return {
     httpOnly: true,
-    secure: isProduction,
+    secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: 7 * 24 * 60 * 60, // 7 días en segundos
+  } as const;
+}
+
+export function setAuthCookies(response: NextResponse, tokens: Awaited<ReturnType<typeof generateTokens>>) {
+  response.cookies.set(ACCESS_COOKIE, tokens.accessToken, {
+    ...cookieOptions(), expires: new Date(tokens.accessExpiresAt * 1000),
+  });
+  response.cookies.set(REFRESH_COOKIE, tokens.refreshToken, {
+    ...cookieOptions(), expires: new Date(tokens.sessionExpiresAt * 1000),
   });
 }
 
-/**
- * Limpia las cookies en el Logout
- */
-export async function clearAuthCookies() {
-  const cookieStore = await cookies();
-  cookieStore.delete('access_token');
-  cookieStore.delete('refresh_token');
+export function clearAuthCookies(response: NextResponse) {
+  const expired = { ...cookieOptions(), expires: new Date(0), maxAge: 0 };
+  response.cookies.set(ACCESS_COOKIE, '', expired);
+  response.cookies.set(REFRESH_COOKIE, '', expired);
 }
