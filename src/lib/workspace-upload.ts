@@ -8,6 +8,7 @@ export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
 export const imageDirectory = () =>
   path.resolve(
+    /* turbopackIgnore: true */
     process.env.WORKSPACE_UPLOAD_DIR ||
       "./data/workspace-images",
   );
@@ -48,7 +49,10 @@ export async function readPhoto(id: string) {
   if (!isImageId(id)) return null;
 
   try {
-    return await readFile(path.join(imageDirectory(), id));
+    return await readFile(
+  /* turbopackIgnore: true */
+  path.join(/* turbopackIgnore: true */ imageDirectory(), id),
+);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
       return null;
