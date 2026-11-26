@@ -1,5 +1,6 @@
 'use client';
 
+import { authFetch } from '@/lib/auth/client';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -175,7 +176,7 @@ function WorkspaceDetailContent() {
       if (pending || document.hidden) return;
       pending = true;
       try {
-        const response = await fetch(`/api/bookings/availability?${query}`, {
+        const response = await authFetch(`/api/bookings/availability?${query}`, {
           cache: 'no-store', signal: controller.signal,
         });
         if (!response.ok) {
@@ -253,7 +254,7 @@ function WorkspaceDetailContent() {
     setReviewError('');
     setSubmitting(true);
     try {
-      const response = await fetch('/api/bookings', {
+      const response = await authFetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -279,7 +280,7 @@ function WorkspaceDetailContent() {
     return (
       <Card className="space-y-4 p-6" role="alert">
         <p>{t(workspaceError)}</p>
-        <Link href="/dashboard" className="text-sm font-semibold underline">{t('Volver al catálogo')}</Link>
+        <Link prefetch={false} href="/dashboard" className="text-sm font-semibold underline">{t('Volver al catálogo')}</Link>
       </Card>
     );
   }
@@ -297,7 +298,7 @@ function WorkspaceDetailContent() {
 
   return (
     <div className="space-y-5">
-      <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm text-muted hover:text-ink">
+      <Link prefetch={false} href="/dashboard" className="inline-flex items-center gap-2 text-sm text-muted hover:text-ink">
         <ArrowLeft size={16} aria-hidden="true" />{t('Volver al catálogo')}
       </Link>
 

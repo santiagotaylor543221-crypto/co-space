@@ -23,10 +23,10 @@ export default function PrivateNavbar() {
       <div className="mx-auto flex max-w-5xl items-center justify-between rounded-2xl border border-line bg-surface px-5 py-4 shadow-xs sm:px-6">
         <Brand />
         <nav aria-label={t("Navegación principal")} className="flex items-center gap-5 text-xs text-muted">
-          <Link href="/dashboard" onClick={closeAccountMenu} className="transition hover:text-ink font-medium">
+          <Link prefetch={false} href="/dashboard" onClick={closeAccountMenu} className="transition hover:text-ink font-medium">
             {t("Catálogo")}
           </Link>
-          <Link href="/mis-reservas" onClick={closeAccountMenu} className="transition hover:text-ink font-medium">
+          <Link prefetch={false} href="/mis-reservas" onClick={closeAccountMenu} className="transition hover:text-ink font-medium">
             {t("Mis reservas")}
           </Link>
           <details ref={accountMenuRef} className="group relative">
@@ -35,7 +35,7 @@ export default function PrivateNavbar() {
               <ChevronDown size={14} className="transition group-open:rotate-180" />
             </summary>
             <div className="absolute right-0 top-full z-10 mt-3 flex min-w-40 flex-col gap-1 rounded-2xl border border-line bg-surface p-2 shadow-lg">
-              <Link
+              <Link prefetch={false}
                 href="/mis-reservas"
                 onClick={closeAccountMenu}
                 className="rounded-xl px-3 py-2 text-xs text-muted transition hover:bg-background hover:text-ink"

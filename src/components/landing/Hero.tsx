@@ -18,7 +18,7 @@ export default function Hero() {
           {t("Reserva un escritorio para concentrarte, una sala para reunirte con tu equipo o una cabina para tu próxima llamada.")}
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
-          <Link href="/dashboard" className="inline-flex items-center gap-2 rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-ink hover:bg-accent/90">
+          <Link prefetch={false} href="/dashboard" className="inline-flex items-center gap-2 rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-ink hover:bg-accent/90">
             {t("Empezar a reservar")}
             <ArrowRight size={16} aria-hidden="true" />
           </Link>

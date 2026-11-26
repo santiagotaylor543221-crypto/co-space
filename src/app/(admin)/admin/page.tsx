@@ -1,5 +1,6 @@
 'use client';
 
+import { authFetch } from '@/lib/auth/client';
 import { FormEvent, useEffect, useState } from 'react';
 import Button from '@/components/ui/button';
 import Modal from '@/components/ui/modal';
@@ -65,9 +66,9 @@ function getErrorMessage(data: unknown, fallback: string) {
 
 async function fetchAdminData() {
   const [bookingResponse, workspaceResponse, userResponse] = await Promise.all([
-    fetch('/api/admin/bookings'),
-    fetch('/api/admin/workspaces'),
-    fetch('/api/admin/users'),
+    authFetch('/api/admin/bookings'),
+    authFetch('/api/admin/workspaces'),
+    authFetch('/api/admin/users'),
   ]);
   const responses = [bookingResponse, workspaceResponse, userResponse];
   const responseData = await Promise.all(responses.map((response) => response.json()));
@@ -171,7 +172,7 @@ export default function AdminPanelPage() {
       };
       const url = editingBookingId ? `/api/admin/bookings/${editingBookingId}` : '/api/admin/bookings';
       const method = editingBookingId ? 'PUT' : 'POST';
-      const response = await fetch(url, {
+      const response = await authFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -195,7 +196,7 @@ export default function AdminPanelPage() {
     setError('');
 
     try {
-      const response = await fetch(`/api/admin/bookings/${id}`, { method: 'DELETE' });
+      const response = await authFetch(`/api/admin/bookings/${id}`, { method: 'DELETE' });
       const data = await response.json();
       if (!response.ok) {
         throw new Error(getErrorMessage(data, t('No se pudo cancelar la reserva')));

@@ -1,5 +1,6 @@
 "use client";
 
+import { authFetch } from '@/lib/auth/client';
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Armchair, Users, Mic, Upload, ImagePlus } from "lucide-react";
 import Image from "next/image";
@@ -81,7 +82,7 @@ export default function WorkspaceEditor({ workspace, onClose, onSaved }: {
       if (file) {
         if (uploadCache.current?.file === file) imageUrl = uploadCache.current.url;
         else {
-          const response = await fetch("/api/admin/workspace-images", { method: "POST", headers: { "Content-Type": file.type }, body: file });
+          const response = await authFetch("/api/admin/workspace-images", { method: "POST", headers: { "Content-Type": file.type }, body: file });
           const result = await response.json();
           if (!response.ok) { setErrors({ imageUrl: [result.error || "No se pudo subir la foto."] }); throw new Error(result.error || "No se pudo subir la foto."); }
           imageUrl = result.imageUrl;

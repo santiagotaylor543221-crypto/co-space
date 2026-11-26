@@ -1,5 +1,6 @@
 "use client";
 
+import { authFetch } from '@/lib/auth/client';
 import { useRef, useState } from "react";
 import { Plus, Search, X, Users, Pencil, Archive, RotateCcw, LayoutGrid, CheckCircle2, Armchair } from "lucide-react";
 import Card from "@/components/ui/card";
@@ -52,7 +53,7 @@ export default function WorkspaceOverview({ workspaces, loading, onChanged }: {
     if (!selected || busyRef.current) return;
     busyRef.current = true; setBusy(true); setError("");
     try {
-      const response = await fetch(`/api/admin/workspaces/${selected.id}`, {
+      const response = await authFetch(`/api/admin/workspaces/${selected.id}`, {
         method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isActive: !selected.isActive }),
       });
       const result = await response.json();

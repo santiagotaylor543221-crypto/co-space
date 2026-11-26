@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowRight, ArrowLeft } from 'lucide-react';
@@ -9,39 +9,41 @@ import Card from '@/components/ui/card';
 import FormField from '@/components/ui/form-field';
 import TextInput from '@/components/ui/text-input';
 import Brand from '@/components/layout/brand';
+import { responseError } from '@/lib/auth/client';
 import { useI18n } from '@/lib/i18n';
 
 // Pantalla de registro limpia, con tarjeta centrada sobre fondo claro y feedback visual
 export default function RegisterPage() {
   const { t } = useI18n();
   const router = useRouter();
-  const [formData, setFormData] = useState({ name: '', email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const pending = useRef(false);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (pending.current) return;
+    const fields = new FormData(event.currentTarget);
+    const credentials = { name: fields.get('name'), email: fields.get('email'), password: fields.get('password') };
+    const fallback = 'Error al registrarse';
+    pending.current = true;
     setError('');
     setLoading(true);
 
     try {
-      const res = await fetch('/api/auth/register', {
+      const send = () => fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(credentials),
       });
+      const res = await send();
+      if (!res.ok) throw new Error(await responseError(res, fallback));
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Error al registrarse');
-      }
-
-      // Registro exitoso, redirigimos a login con parámetro para mostrar confirmación
-      router.push('/login?registered=true');
-    } catch (err: unknown) {
-      setError(err instanceof Error ? t(err.message) : t('Error al registrarse'));
-    } finally {
+      router.replace('/login?registered=true');
+    } catch (error) {
+      setError(t(error instanceof Error ? error.message : fallback));
+      pending.current = false;
       setLoading(false);
     }
   };
@@ -75,15 +77,16 @@ export default function RegisterPage() {
           </p>
         )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <form action="/api/auth/register" method="post" onSubmit={handleSubmit} className="flex flex-col gap-5">
           <FormField label={t('Nombre Completo')} htmlFor="name">
             <TextInput
               id="name"
+              name="name"
+              autoComplete="name"
+              maxLength={120}
               type="text"
               required
               placeholder="Marina Santos"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               hasError={Boolean(error)}
             />
           </FormField>
@@ -91,11 +94,11 @@ export default function RegisterPage() {
           <FormField label={t('Correo Electrónico')} htmlFor="email">
             <TextInput
               id="email"
+              name="email"
+              autoComplete="username"
               type="email"
               required
               placeholder="tu@correo.com"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               hasError={Boolean(error)}
             />
           </FormField>
@@ -103,14 +106,20 @@ export default function RegisterPage() {
           <FormField label={t('Contraseña')} htmlFor="password">
             <TextInput
               id="password"
+              name="password"
+              autoComplete="new-password"
+              minLength={8}
+              aria-describedby="password-policy"
               type="password"
               required
               placeholder="••••••••"
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               hasError={Boolean(error)}
             />
           </FormField>
+
+          <p id="password-policy" className="-mt-3 text-xs text-muted">
+            {t('Usa al menos 8 caracteres y un máximo de 72 bytes (UTF-8).')}
+          </p>
 
           <Button
             type="submit"
@@ -125,7 +134,7 @@ export default function RegisterPage() {
 
         <footer className="mt-6 border-t border-line pt-5 text-center text-xs text-muted">
           {t('¿Ya tienes cuenta?')}{' '}
-          <Link href="/login" className="font-semibold text-ink hover:underline">
+          <Link prefetch={false} href="/login" className="font-semibold text-ink hover:underline">
             {t('Inicia sesión')}
           </Link>
         </footer>

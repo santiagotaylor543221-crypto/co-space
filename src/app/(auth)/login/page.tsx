@@ -1,14 +1,16 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { ArrowRight, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import Button from '@/components/ui/button';
 import Card from '@/components/ui/card';
 import FormField from '@/components/ui/form-field';
 import TextInput from '@/components/ui/text-input';
 import Brand from '@/components/layout/brand';
+import { publishSessionChange, replaceDocument, responseError, withSessionLock } from '@/lib/auth/client';
+import { panelPath } from '@/lib/auth/paths';
 import { useI18n } from '@/lib/i18n';
 
 export default function LoginPage() {
@@ -21,42 +23,44 @@ export default function LoginPage() {
 
 function LoginFormContent() {
   const { t } = useI18n();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const justRegistered = searchParams.get('registered') === 'true';
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const pending = useRef(false);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (pending.current) return;
+    const fields = new FormData(event.currentTarget);
+    const credentials = { email: fields.get('email'), password: fields.get('password') };
+    const fallback = 'Error al iniciar sesión';
+    pending.current = true;
     setError('');
     setLoading(true);
 
     try {
-      const res = await fetch('/api/auth/login', {
+      const send = () => fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(credentials),
       });
+      const res = await withSessionLock(send);
+      if (!res.ok) throw new Error(await responseError(res, fallback));
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Error al iniciar sesión');
+      const data: unknown = await res.json();
+      if (typeof data !== 'object' || data === null || !('user' in data) ||
+          typeof data.user !== 'object' || data.user === null || !('role' in data.user) ||
+          (data.user.role !== 'USER' && data.user.role !== 'ADMIN')) {
+        throw new Error(fallback);
       }
-
-      // Redirección según rol conservando la cookie HTTP-Only inyectada por el servidor
-      if (data.user.role === 'ADMIN') {
-        router.push('/admin');
-      } else {
-        router.push('/dashboard');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al iniciar sesión');
-    } finally {
+      publishSessionChange();
+      replaceDocument(panelPath(data.user.role));
+    } catch (error) {
+      setError(t(error instanceof Error ? error.message : fallback));
+      pending.current = false;
       setLoading(false);
     }
   };
@@ -85,7 +89,7 @@ function LoginFormContent() {
         {justRegistered && !error && (
           <div className="mb-5 flex items-center gap-2 rounded-xl border border-success/30 bg-success-soft px-4 py-3 text-xs text-success">
             <CheckCircle2 size={16} className="shrink-0" />
-            <span>Cuenta creada correctamente. Ya puedes iniciar sesión.</span>
+            <span>Solicitud de registro recibida. Intenta iniciar sesión.</span>
           </div>
         )}
 
@@ -99,14 +103,14 @@ function LoginFormContent() {
           </p>
         )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <form action="/api/auth/login" method="post" onSubmit={handleSubmit} className="flex flex-col gap-5">
           <FormField label={t('Correo Electrónico')} htmlFor="email">
             <TextInput
               id="email"
+              name="email"
+              autoComplete="username"
               type="email"
               placeholder="tu@correo.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
               hasError={Boolean(error)}
               required
             />
@@ -115,10 +119,10 @@ function LoginFormContent() {
           <FormField label={t('Contraseña')} htmlFor="password">
             <TextInput
               id="password"
+              name="password"
+              autoComplete="current-password"
               type="password"
               placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
               hasError={Boolean(error)}
               required
             />
@@ -137,7 +141,7 @@ function LoginFormContent() {
 
         <footer className="mt-6 border-t border-line pt-5 text-center text-xs text-muted">
           {t('¿No tienes cuenta?')}{' '}
-          <Link href="/register" className="font-semibold text-ink hover:underline">
+          <Link prefetch={false} href="/register" className="font-semibold text-ink hover:underline">
             {t('Regístrate')}
           </Link>
         </footer>

@@ -61,7 +61,7 @@ export default function Spaces() {
               <div className="p-5">
                 <h3 className="font-heading text-xl font-semibold">{t(title)}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted">{t(description)}</p>
-                <Link href="/dashboard" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold">
+                <Link prefetch={false} href="/dashboard" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold">
                   {t("Ver disponibilidad")} <ArrowRight size={16} aria-hidden="true" />
                 </Link>
               </div>

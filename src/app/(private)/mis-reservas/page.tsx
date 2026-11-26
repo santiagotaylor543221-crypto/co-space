@@ -1,5 +1,6 @@
 'use client';
 
+import { authFetch } from '@/lib/auth/client';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { CalendarDays, Clock, Plus, Search, Trash2 } from 'lucide-react';
@@ -144,7 +145,7 @@ export default function MisReservasPage() {
     const controller = new AbortController();
     async function fetchBookings() {
       try {
-        const response = await fetch('/api/bookings', { cache: 'no-store', signal: controller.signal });
+        const response = await authFetch('/api/bookings', { cache: 'no-store', signal: controller.signal });
         if (!response.ok) {
           throw new Error(response.status === 401 ? 'Tu sesión venció. Inicia sesión de nuevo.' : 'Error al cargar las reservas');
         }
@@ -208,7 +209,7 @@ export default function MisReservasPage() {
     setCanceling(true);
     setCancellationError('');
     try {
-      const response = await fetch(`/api/bookings/${bookingToCancel.id}`, { method: 'DELETE' });
+      const response = await authFetch(`/api/bookings/${bookingToCancel.id}`, { method: 'DELETE' });
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || 'Error al cancelar la reserva');
@@ -233,7 +234,7 @@ export default function MisReservasPage() {
           <h1 className="font-heading text-3xl font-semibold tracking-tight text-ink sm:text-4xl">{t('Mis Reservas')}</h1>
           <p className="mt-2 text-sm text-muted">{t('Consulta tus próximas reservas y tu historial.')}</p>
         </div>
-        <Link href="/dashboard" className={catalogueLink}>
+        <Link prefetch={false} href="/dashboard" className={catalogueLink}>
           <Plus size={16} aria-hidden="true" />{t('Nueva reserva')}
         </Link>
       </header>
@@ -307,7 +308,7 @@ export default function MisReservasPage() {
           action={hasFilters ? (
             <Button type="button" variant="secondary" onClick={() => setFilters(emptyFilters)}>{t('Limpiar filtros')}</Button>
           ) : tab === 'upcoming' ? (
-            <Link href="/dashboard" className={catalogueLink}>{t('Explorar espacios')}</Link>
+            <Link prefetch={false} href="/dashboard" className={catalogueLink}>{t('Explorar espacios')}</Link>
           ) : null}
         />
       )}

@@ -28,7 +28,7 @@ export default function AdminSidebar() {
           {t("MENÚ PRINCIPAL")}
         </p>
 
-        <Link
+        <Link prefetch={false}
           href="/admin"
           aria-current="page"
           className="flex items-center gap-2.5 rounded-xl bg-accent-soft px-3.5 py-2.5 text-xs font-semibold text-ink shadow-xs"

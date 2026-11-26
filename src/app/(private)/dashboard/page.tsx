@@ -87,7 +87,7 @@ export default function DashboardPage() {
       {!loading && !error && workspaces.length > 0 && (
         <section className="grid auto-rows-fr gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {workspaces.map((workspace) => (
-            <Link key={workspace.id} href={`/dashboard/${workspace.id}`} className="group block min-w-0 rounded-2xl">
+            <Link prefetch={false} key={workspace.id} href={`/dashboard/${workspace.id}`} className="group block min-w-0 rounded-2xl">
               <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-accent/40 hover:shadow-md">
                 {/* Imagen del espacio */}
                 <div className="relative h-48 w-full shrink-0 overflow-hidden border-b border-line bg-background">

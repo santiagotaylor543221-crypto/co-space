@@ -70,11 +70,11 @@ export default function Navbar() {
         <div className="hidden items-center gap-3 lg:flex">
           <LanguageSwitcher />
 
-          <Link href="/login" className="rounded-lg border border-line bg-surface px-3 py-2 text-xs font-medium hover:bg-accent-soft">
+          <Link prefetch={false} href="/login" className="rounded-lg border border-line bg-surface px-3 py-2 text-xs font-medium hover:bg-accent-soft">
             {t("Iniciar sesión")}
           </Link>
 
-          <Link href="/dashboard" className="inline-flex items-center gap-2 rounded-lg bg-accent px-3 py-2 text-xs font-semibold hover:bg-accent/90">
+          <Link prefetch={false} href="/dashboard" className="inline-flex items-center gap-2 rounded-lg bg-accent px-3 py-2 text-xs font-semibold hover:bg-accent/90">
             {t("Reservar")}
             <ArrowUpRight size={14} aria-hidden="true" />
           </Link>
@@ -111,10 +111,10 @@ export default function Navbar() {
             </a>
           ))}
           <div className="mt-4 flex flex-col gap-2.5 pt-4 border-t border-line">
-            <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="rounded-xl border border-line p-3 text-center text-sm font-medium">
+            <Link prefetch={false} href="/login" onClick={() => setMobileMenuOpen(false)} className="rounded-xl border border-line p-3 text-center text-sm font-medium">
               {t("Iniciar sesión")}
             </Link>
-            <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)} className="rounded-xl bg-accent p-3 text-center text-sm font-semibold">
+            <Link prefetch={false} href="/dashboard" onClick={() => setMobileMenuOpen(false)} className="rounded-xl bg-accent p-3 text-center text-sm font-semibold">
               {t("Reservar")}
             </Link>
           </div>

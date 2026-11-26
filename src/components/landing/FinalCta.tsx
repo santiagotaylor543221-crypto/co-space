@@ -25,7 +25,7 @@ export default function FinalCta() {
         <p className="mx-auto mt-5 max-w-md text-sm leading-relaxed text-stone-100 sm:text-base">
           {t("Crea tu cuenta y agenda el lugar para tu próxima jornada de trabajo.")}
         </p>
-        <Link href="/register" className="mt-8 inline-flex items-center gap-2 rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-ink hover:bg-accent/90">
+        <Link prefetch={false} href="/register" className="mt-8 inline-flex items-center gap-2 rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-ink hover:bg-accent/90">
           {t("Crear cuenta")}
           <ArrowRight size={16} aria-hidden="true" />
         </Link>
