@@ -50,9 +50,9 @@ export async function readPhoto(id: string) {
 
   try {
     return await readFile(
-  /* turbopackIgnore: true */
-  path.join(/* turbopackIgnore: true */ imageDirectory(), id),
-);
+      /* turbopackIgnore: true */
+      path.join(/* turbopackIgnore: true */ imageDirectory(), id),
+    );
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
       return null;
