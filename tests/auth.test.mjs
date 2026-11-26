@@ -11,6 +11,7 @@ import { loginSchema, registerSchema } from '../src/lib/auth/credentials.ts';
 import { pageRedirect, checkOrigin } from '../src/lib/auth/http.ts';
 import { renewalDestination } from '../src/lib/auth/paths.ts';
 import { enforceRateLimit } from '../src/lib/auth/rate-limit.ts';
+import './workspace-editor-session.test.mjs';
 
 process.env.JWT_ACCESS_SECRET ??= 'only-local-tests-access-secret-omitting-real-keys';
 process.env.JWT_REFRESH_SECRET ??= 'only-local-tests-refresh-secret-distinct-key';
