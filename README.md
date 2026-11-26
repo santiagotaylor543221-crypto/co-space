@@ -69,7 +69,7 @@ Nginx	Proxy inverso
 Certbot	Gestión de certificados TLS (pendiente de configurar)
 
 
-La base de datos RDS no tiene acceso público. Next.js se conecta a ella por la red privada de AWS. Nginx recibe solicitudes HTTP y las reenvía al contenedor en 127.0.0.1:3000.
+La base de datos RDS no tiene acceso público. Next.js se conecta a ella por la red privada de AWS. Nginx termina HTTPS y reenvía las solicitudes al contenedor en 127.0.0.1:3000.
 Estado actual: despliegue HTTP operativo. Subdominio y HTTPS pendientes de configuración.
 
 Requisitos previos
@@ -127,6 +127,7 @@ DATABASE_URL="postgresql://USER:PASSWORD@RDS_ENDPOINT:5432/DATABASE?schema=publi
 DIRECT_URL="postgresql://USER:PASSWORD@RDS_ENDPOINT:5432/DATABASE?schema=public&sslmode=require"
 JWT_ACCESS_SECRET="your-production-access-secret"
 JWT_REFRESH_SECRET="your-production-refresh-secret"
+AUTH_ORIGIN=https://cospace.san.coderhivex.com
 NODE_ENV=production
 Este archivo no debe incluirse en Git. Restringe sus permisos con chmod 600 .env.production. sslmode=require cifra el tráfico, pero no sustituye la verificación completa del certificado del servidor.
 Docker Compose de producción
@@ -148,10 +149,37 @@ Revisar el estado
 sudo docker compose --env-file .env.production -f docker-compose.prod.yml ps
 sudo docker compose --env-file .env.production -f docker-compose.prod.yml logs -f app
 El Dockerfile ejecuta prisma migrate deploy antes de npm run start, aplicando las migraciones pendientes a RDS. No ejecutes el seed con cuentas de prueba en producción.
-Nginx y HTTPS
-Nginx actúa como proxy inverso entre el puerto HTTP público y 127.0.0.1:3000. El puerto 3000 no necesita estar abierto públicamente en el Security Group.
+### Nginx y autenticación en producción
 
-La configuración de HTTPS con Certbot se completará cuando el subdominio apunte a la IP elástica de EC2. Hasta entonces, evita introducir credenciales reales o datos sensibles a través de HTTP.
+1. Pasa `AUTH_ORIGIN=https://cospace.san.coderhivex.com` al proceso Node mediante el `env_file` del servicio que se ejecuta en EC2. Usa el origen HTTPS sin barra final. Configura `JWT_ACCESS_SECRET` y `JWT_REFRESH_SECRET` con valores independientes generados con `openssl rand -hex 32`. El modo `next dev` admite los orígenes locales directos sin `AUTH_ORIGIN`.
+2. Mantén el puerto del contenedor publicado en `127.0.0.1:3000` y fuera del acceso público. En el bloque HTTPS existente de Nginx, con `server_name cospace.san.coderhivex.com`, configura el `location /` así. Conserva el certificado, los límites de subidas y las demás directivas del sitio. Mantén la redirección HTTP a HTTPS y rechaza hosts desconocidos en el servidor por defecto.
+
+   ```nginx
+   location / {
+       proxy_pass http://127.0.0.1:3000;
+       proxy_set_header Host cospace.san.coderhivex.com;
+       proxy_set_header X-Forwarded-Host cospace.san.coderhivex.com;
+       proxy_set_header X-Forwarded-Proto https;
+       proxy_set_header X-Forwarded-Port 443;
+       proxy_set_header X-Forwarded-For $remote_addr;
+       proxy_set_header X-CoSpace-Client-IP $remote_addr;
+       proxy_redirect off;
+   }
+   ```
+
+3. Configura `AUTH_TRUST_PROXY=1` en el contenedor únicamente después de verificar que Nginx sobrescribe `X-CoSpace-Client-IP` y que el servicio solo es accesible a través del proxy. Con Nginx directamente expuesto, `$remote_addr` es el par TCP. Si hay un balanceador delante, configura la recuperación de la IP solo para los rangos de ese intermediario confiable. Sin confianza explícita, la aplicación usa un cupo compartido. Si hay reglas de caché en Nginx, respeta `Cache-Control: private, no-store` en las rutas de sesión, invitados, reservas y administración.
+4. Valida el archivo con `sudo nginx -t` antes de recargar Nginx e iniciar el contenedor con las variables actualizadas. Este cambio de autenticación no requiere una migración. Las sesiones emitidas por la versión anterior requieren un nuevo login y conservan las contraseñas existentes.
+
+### Verificación de autenticación
+
+- Tras el despliegue, comprueba en una ventana privada que `/dashboard`, `/mis-reservas` y `/admin` llevan al login. Verifica que `Location` sea una ruta relativa o que tenga el origen público HTTPS. Comprueba que `GET /api/bookings` y `GET /api/admin/users` sin sesión devuelvan 401.
+- Con una cuenta de pruebas USER, inicia sesión, recarga, abre `/login` y `/register` desde otra pestaña y comprueba que ambas llevan a `/dashboard`. Verifica que el acceso a `/admin` redirige al dashboard y que la API administrativa devuelve 403. Repite con una cuenta ADMIN y verifica la redirección a `/admin` y el acceso administrativo.
+- Revisa en DevTools las cookies `HttpOnly; Secure; SameSite=Lax; Path=/` y las respuestas sensibles `private, no-store`. Tras 15 minutos sin renovar, abre una página privada y comprueba que el navegador llama a `POST /api/auth/refresh` y vuelve a la página. Cierra sesión y prueba Atrás, Adelante y la segunda pestaña. Usa una cuenta de pruebas aislada para comprobar el 429 y `Retry-After`.
+- Si persisten los 401 pese a usar el mismo correo y contraseña, compara las revisiones de imagen activas y que registro y login apunten a la misma base y esquema. Revisa el código HTTP y el evento de autenticación por hora, sin registrar payloads, cookies ni cadenas de conexión. Los errores de configuración, conexión o consulta se manifiestan como 500.
+- Ejecuta las pruebas aisladas con `node --import tsx tests/auth.test.mjs`. Para incluir la prueba HTTP, inicia Next.js contra un PostgreSQL temporal de loopback con el esquema aplicado y secretos de prueba. Define `AUTH_TEST_URL` con ese origen local y `AUTH_TEST_DATABASE_URL` con la URL del PostgreSQL temporal. El caso integrado crea sus propios datos de prueba en esa base.
+
+El límite en memoria se reinicia al arrancar el proceso. Cada instancia tiene sus propios contadores. Las ventanas son fijas y los intentos rechazados no las prolongan. Login admite 40 intentos por IP y 8 por identificador cada 15 minutos, registro 20 por IP y 5 por identificador cada 15 minutos y renovación 120 por IP y 12 por cuenta cada minuto. Una cuenta conserva una sola sesión de hasta siete días, compartida por las pestañas del mismo navegador. Un login nuevo sustituye la sesión anterior. Para sesiones independientes por dispositivo se necesitaría una tabla de sesiones con caducidad y revocación individuales.
+
 Cuentas de prueba
 ⚠️ Solo para desarrollo. No utilices estas credenciales en producción.
 
