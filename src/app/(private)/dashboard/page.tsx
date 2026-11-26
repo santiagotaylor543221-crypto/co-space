@@ -8,6 +8,8 @@ import Badge from '@/components/ui/badge';
 import EmptyState from '@/components/ui/empty-state';
 import Skeleton from '@/components/ui/skeleton';
 import { useI18n } from '@/lib/i18n';
+import { catalogWorkspaceImage } from '@/lib/catalog-workspace-image';
+import type { WorkspaceType } from '@/lib/workspace-schema';
 
 interface Workspace {
   id: string;
@@ -16,7 +18,7 @@ interface Workspace {
   capacity: number;
   pricePerHour: number;
   imageUrl?: string;
-  type?: 'DESK' | 'MEETING_ROOM' | 'BOOTH';
+  type?: WorkspaceType;
 }
 
 export default function DashboardPage() {
@@ -28,7 +30,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchWorkspaces = async () => {
       try {
-        const res = await fetch('/api/workspaces');
+        const res = await fetch('/api/workspaces', { cache: 'no-store' });
         if (!res.ok) throw new Error('Error al cargar espacios');
         const data = await res.json();
         setWorkspaces(data);
@@ -83,16 +85,16 @@ export default function DashboardPage() {
 
       {/* Grid de tarjetas de espacios */}
       {!loading && !error && workspaces.length > 0 && (
-        <section className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <section className="grid auto-rows-fr gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {workspaces.map((workspace) => (
-            <Link key={workspace.id} href={`/dashboard/${workspace.id}`} className="group block">
-              <article className="overflow-hidden rounded-2xl border border-line bg-surface shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-accent/40 hover:shadow-md flex flex-col justify-between">
+            <Link key={workspace.id} href={`/dashboard/${workspace.id}`} className="group block min-w-0 rounded-2xl">
+              <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-accent/40 hover:shadow-md">
                 {/* Imagen del espacio */}
-                <div className="relative h-48 w-full bg-background overflow-hidden border-b border-line">
+                <div className="relative h-48 w-full shrink-0 overflow-hidden border-b border-line bg-background">
                   <WorkspaceImage
-                    imageUrl={workspace.imageUrl}
+                    imageUrl={catalogWorkspaceImage(workspace.name, workspace.type, workspace.imageUrl)}
                     type={workspace.type}
-                    alt={workspace.name}
+                    alt=""
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                   {/* Badge de disponibilidad */}
@@ -104,36 +106,36 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Información y tarifa */}
-                <div className="p-5 flex flex-col justify-between flex-1">
+                <div className="flex flex-1 flex-col p-5">
                   <div>
-                    <h2 className="font-heading text-base font-semibold text-ink group-hover:text-accent transition-colors">
+                    <h2 className="line-clamp-2 min-h-[2lh] font-heading text-base leading-snug font-semibold wrap-break-word text-ink transition-colors group-hover:text-accent">
                       {workspace.name}
                     </h2>
-                    {workspace.description && (
-                      <p className="mt-1 text-xs text-muted line-clamp-2 leading-relaxed">
-                        {workspace.description}
-                      </p>
-                    )}
+                    <p className="mt-1 line-clamp-3 min-h-[3lh] text-xs leading-relaxed wrap-break-word text-muted">
+                      {workspace.description}
+                    </p>
                   </div>
 
-                  <div className="mt-6 flex items-center justify-between pt-4 border-t border-line">
-                    <div className="flex items-center gap-1.5 text-xs text-muted">
-                      <Users size={14} className="text-muted" />
-                      <span>
-                        {workspace.capacity} {t(workspace.capacity === 1 ? 'persona' : 'personas')}
-                      </span>
-                    </div>
-
-                    <div className="text-right flex items-center gap-2">
-                      <div>
-                        <span className="font-heading text-base font-semibold text-ink">
-                          {workspace.pricePerHour} €
+                  <div className="mt-auto pt-6">
+                    <div className="flex items-center justify-between gap-2 border-t border-line pt-4">
+                      <div className="flex items-center gap-1.5 text-xs text-muted">
+                        <Users size={14} className="text-muted" />
+                        <span>
+                          {workspace.capacity} {t(workspace.capacity === 1 ? 'persona' : 'personas')}
                         </span>
-                        <span className="text-[10px] text-muted ml-1">{t('/ hora')}</span>
                       </div>
-                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-background border border-line text-ink group-hover:bg-accent group-hover:border-accent transition">
-                        <ArrowRight size={13} />
-                      </span>
+
+                      <div className="text-right flex items-center gap-2">
+                        <div>
+                          <span className="font-heading text-base font-semibold text-ink">
+                            {workspace.pricePerHour} €
+                          </span>
+                          <span className="text-[10px] text-muted ml-1">{t('/ hora')}</span>
+                        </div>
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-background border border-line text-ink group-hover:bg-accent group-hover:border-accent transition">
+                          <ArrowRight size={13} />
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>

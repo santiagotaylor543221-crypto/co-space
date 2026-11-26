@@ -1,6 +1,8 @@
+import { confirmedBookingOverlap } from '@/lib/booking-overlap';
 import { prisma } from '@/lib/prisma';
 import dayjs from 'dayjs';
-import { BookingStatus, Role } from '@prisma/client';
+import { BookingStatus, Prisma, Role } from '@prisma/client';
+import { bookingDays, bookingHour, BOOKING_CLOSE_HOUR, BOOKING_MAX_HOURS, BOOKING_OPEN_HOUR, inBookingZone } from '@/lib/booking-hours';
 
 // Tipado estricto
 interface CreateBookingDTO {
@@ -17,34 +19,39 @@ interface ValidatedBooking {
   hours: number;
 }
 
-async function validateBooking(data: CreateBookingDTO, ignoredBookingId?: string): Promise<ValidatedBooking> {
-  const start = dayjs(data.startTime);
-  const end = dayjs(data.endTime);
-  const now = dayjs();
-
-  if (!start.isValid() || !end.isValid()) {
+async function validateBooking(
+  db: Prisma.TransactionClient,
+  data: CreateBookingDTO,
+  ignoredBookingId?: string,
+): Promise<ValidatedBooking> {
+  if (!dayjs(data.startTime).isValid() || !dayjs(data.endTime).isValid()) {
     throw { status: 400, message: 'La fecha de inicio o fin no es válida.' };
   }
 
+  const start = inBookingZone(data.startTime);
+  const end = inBookingZone(data.endTime);
+  const now = new Date();
+  const day = start.format('YYYY-MM-DD');
+
   const hours = end.diff(start, 'hour', true);
-  if (hours < 1 || hours > 4 || hours % 1 !== 0) {
+  if (hours < 1 || hours > BOOKING_MAX_HOURS || hours % 1 !== 0) {
     throw { status: 400, message: 'La reserva debe ser de 1 a 4 horas exactas.' };
   }
 
-  if (start.hour() < 7 || end.hour() > 21 || (end.hour() === 21 && end.minute() > 0)) {
+  if (start.isBefore(bookingHour(day, BOOKING_OPEN_HOUR)) || end.isAfter(bookingHour(day, BOOKING_CLOSE_HOUR))) {
     throw { status: 400, message: 'El horario permitido es de 07:00 a 21:00.' };
   }
 
   if (start.isBefore(now)) {
     throw { status: 400, message: 'No puedes reservar en el pasado.' };
   }
-  if (start.isAfter(now.add(30, 'day'))) {
+  if (!bookingDays(now).includes(day)) {
     throw { status: 400, message: 'Máximo 30 días de anticipación.' };
   }
 
   const [workspace, user] = await Promise.all([
-    prisma.workspace.findUnique({ where: { id: data.workspaceId } }),
-    prisma.user.findUnique({ where: { id: data.userId }, select: { id: true } }),
+    db.workspace.findUnique({ where: { id: data.workspaceId } }),
+    db.user.findUnique({ where: { id: data.userId }, select: { id: true } }),
   ]);
   if (!workspace || !workspace.isActive) {
     throw { status: 404, message: 'El espacio no existe o está archivado.' };
@@ -52,11 +59,11 @@ async function validateBooking(data: CreateBookingDTO, ignoredBookingId?: string
   if (!user) throw { status: 404, message: 'Usuario no encontrado.' };
 
   const excludedBooking = ignoredBookingId ? { id: { not: ignoredBookingId } } : {};
-  const futureBookings = await prisma.booking.count({
+  const futureBookings = await db.booking.count({
     where: {
       userId: data.userId,
       status: BookingStatus.CONFIRMED,
-      startTime: { gt: now.toDate() },
+      startTime: { gt: now },
       ...excludedBooking,
     },
   });
@@ -65,14 +72,12 @@ async function validateBooking(data: CreateBookingDTO, ignoredBookingId?: string
   }
 
   const overlap = {
-    status: BookingStatus.CONFIRMED,
-    startTime: { lt: end.toDate() },
-    endTime: { gt: start.toDate() },
+    ...confirmedBookingOverlap(start.toDate(), end.toDate()),
     ...excludedBooking,
   };
   const [spaceOverlap, userOverlap] = await Promise.all([
-    prisma.booking.findFirst({ where: { ...overlap, workspaceId: data.workspaceId } }),
-    prisma.booking.findFirst({ where: { ...overlap, userId: data.userId } }),
+    db.booking.findFirst({ where: { ...overlap, workspaceId: data.workspaceId } }),
+    db.booking.findFirst({ where: { ...overlap, userId: data.userId } }),
   ]);
 
   if (spaceOverlap) {
@@ -85,37 +90,54 @@ async function validateBooking(data: CreateBookingDTO, ignoredBookingId?: string
   return { start, end, workspace, hours };
 }
 
+async function writeBooking<T>(operation: (db: Prisma.TransactionClient) => Promise<T>) {
+  try {
+    return await prisma.$transaction(operation, {
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034') {
+      throw { status: 409, message: 'La disponibilidad cambió. Vuelve a elegir un horario.' };
+    }
+    throw error;
+  }
+}
+
 export const bookingService = {
   async createBooking(data: CreateBookingDTO) {
-    const { start, end, workspace, hours } = await validateBooking(data);
-    return await prisma.booking.create({
-      data: {
-        userId: data.userId,
-        workspaceId: data.workspaceId,
-        startTime: start.toDate(),
-        endTime: end.toDate(),
-        totalPrice: hours * workspace.pricePerHour,
-      },
+    return writeBooking(async (db) => {
+      const { start, end, workspace, hours } = await validateBooking(db, data);
+      return db.booking.create({
+        data: {
+          userId: data.userId,
+          workspaceId: data.workspaceId,
+          startTime: start.toDate(),
+          endTime: end.toDate(),
+          totalPrice: hours * workspace.pricePerHour,
+        },
+      });
     });
   },
 
   async updateBooking(bookingId: string, data: CreateBookingDTO) {
-    const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
-    if (!booking) throw { status: 404, message: 'Reserva no encontrada.' };
-    if (booking.status !== BookingStatus.CONFIRMED) {
-      throw { status: 400, message: 'Solo se pueden editar reservas confirmadas.' };
-    }
+    return writeBooking(async (db) => {
+      const booking = await db.booking.findUnique({ where: { id: bookingId } });
+      if (!booking) throw { status: 404, message: 'Reserva no encontrada.' };
+      if (booking.status !== BookingStatus.CONFIRMED) {
+        throw { status: 400, message: 'Solo se pueden editar reservas confirmadas.' };
+      }
 
-    const { start, end, workspace, hours } = await validateBooking(data, bookingId);
-    return prisma.booking.update({
-      where: { id: bookingId },
-      data: {
-        userId: data.userId,
-        workspaceId: data.workspaceId,
-        startTime: start.toDate(),
-        endTime: end.toDate(),
-        totalPrice: hours * workspace.pricePerHour,
-      },
+      const { start, end, workspace, hours } = await validateBooking(db, data, bookingId);
+      return db.booking.update({
+        where: { id: bookingId },
+        data: {
+          userId: data.userId,
+          workspaceId: data.workspaceId,
+          startTime: start.toDate(),
+          endTime: end.toDate(),
+          totalPrice: hours * workspace.pricePerHour,
+        },
+      });
     });
   },
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, type ReactNode } from "react";
+import { Suspense, useState, useSyncExternalStore, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutGrid, CalendarDays, ArrowLeft, Menu, X, User } from "lucide-react";
@@ -9,20 +9,24 @@ import LogoutButton from "@/components/layout/logout-button";
 import LanguageSwitcher from "@/components/layout/language-switcher";
 import { useI18n } from "@/lib/i18n";
 
-// Enlaces de navegación con detección de ruta activa envueltos en Suspense para prerendering
+const subscribeToHydration = () => () => {};
+const hydratedSnapshot = () => true;
+const serverHydrationSnapshot = () => false;
 function PrivateNavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const { t } = useI18n();
   const pathname = usePathname();
+  // Esta frontera puede hidratarse después de que el proveedor lea el idioma guardado.
+  const hydrated = useSyncExternalStore(subscribeToHydration, hydratedSnapshot, serverHydrationSnapshot);
 
   const navigation = [
     {
-      name: t("Catálogo"),
+      name: "Catálogo",
       href: "/dashboard",
       icon: LayoutGrid,
       isActive: pathname === "/dashboard" || pathname.startsWith("/dashboard/"),
     },
     {
-      name: t("Mis reservas"),
+      name: "Mis reservas",
       href: "/mis-reservas",
       icon: CalendarDays,
       isActive: pathname === "/mis-reservas",
@@ -48,7 +52,7 @@ function PrivateNavLinks({ onNavigate }: { onNavigate?: () => void }) {
               size={16}
               className={item.isActive ? "text-accent" : "text-muted"}
             />
-            <span>{item.name}</span>
+            <span>{hydrated ? t(item.name) : item.name}</span>
           </Link>
         );
       })}

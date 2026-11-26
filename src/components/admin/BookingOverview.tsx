@@ -6,6 +6,7 @@ import Button from "@/components/ui/button";
 import Card from "@/components/ui/card";
 import Badge from "@/components/ui/badge";
 import Skeleton from "@/components/ui/skeleton";
+import { bookingTimeState } from "@/lib/booking-history";
 import { useI18n } from "@/lib/i18n";
 
 export interface AdminBooking {
@@ -20,6 +21,12 @@ export interface AdminBooking {
 }
 
 type Period = "all" | "today" | "tomorrow" | "week" | "custom";
+type BookingTab = ReturnType<typeof bookingTimeState>;
+const bookingTabs: { id: BookingTab; label: string; empty: string }[] = [
+  { id: "upcoming", label: "Próximas", empty: "No hay próximas reservas." },
+  { id: "ongoing", label: "En curso", empty: "No hay reservas en curso." },
+  { id: "finished", label: "Finalizadas", empty: "No hay reservas finalizadas." },
+];
 const dayStart = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
 const nextDay = (date: Date, days = 1) => new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
 
@@ -37,6 +44,7 @@ export default function BookingOverview({ bookings, loading, canCreate, onCreate
 }) {
   const { t, language } = useI18n();
   const [now, setNow] = useState<Date | null>(null);
+  const [tab, setTab] = useState<BookingTab>("upcoming");
   const [query, setQuery] = useState("");
   const [period, setPeriod] = useState<Period>("all");
   const [from, setFrom] = useState("");
@@ -75,21 +83,31 @@ export default function BookingOverview({ bookings, loading, canCreate, onCreate
   }
   const invalidRange = Boolean(period === "custom" && from && to && from > to);
   const normalized = query.trim().toLocaleLowerCase(locale);
-  const filtered = invalidRange ? [] : bookings.filter((booking) =>
+  const grouped: Record<BookingTab, AdminBooking[]> = { upcoming: [], ongoing: [], finished: [] };
+  if (now) {
+    for (const booking of bookings) grouped[bookingTimeState(booking, +now)].push(booking);
+  }
+  const activeTab = bookingTabs.find(({ id }) => id === tab) ?? bookingTabs[0];
+  const currentBookings = grouped[tab];
+  const filtered = invalidRange ? [] : currentBookings.filter((booking) =>
     (!normalized || [booking.user.name, booking.user.email, booking.workspace.name].some((value) => value.toLocaleLowerCase(locale).includes(normalized))) &&
     (!rangeStart || new Date(booking.endTime) > rangeStart) &&
-    (!rangeEnd || new Date(booking.startTime) < rangeEnd));
+    (!rangeEnd || new Date(booking.startTime) < rangeEnd))
+    .sort((a, b) => tab === "finished"
+      ? Date.parse(b.endTime) - Date.parse(a.endTime)
+      : Date.parse(a.startTime) - Date.parse(b.startTime));
   const todayBookings = bookings.filter((booking) => overlaps(booking, today, tomorrow));
   const metrics = [
     { label: "Reservas de hoy", icon: CalendarDays, value: todayBookings.length },
-    { label: "En curso", icon: Clock3, value: bookings.filter((booking) => now && new Date(booking.startTime) <= now && new Date(booking.endTime) > now).length },
-    { label: "Próximas", icon: CalendarClock, value: bookings.filter((booking) => now && new Date(booking.startTime) > now).length },
+    { label: "En curso", icon: Clock3, value: grouped.ongoing.length },
+    { label: "Próximas", icon: CalendarClock, value: grouped.upcoming.length },
     { label: "Horas reservadas hoy", icon: Timer, value: new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(todayBookings.reduce((hours, booking) => hours + (Math.min(+new Date(booking.endTime), +tomorrow) - Math.max(+new Date(booking.startTime), +today)) / 3_600_000, 0)) },
   ];
   const status = (booking: AdminBooking) => {
     if (!now) return <Badge>—</Badge>;
-    if (new Date(booking.endTime) <= now) return <Badge>{t("Finalizada")}</Badge>;
-    if (new Date(booking.startTime) <= now) return <Badge variant="success">{t("En curso")}</Badge>;
+    const state = bookingTimeState(booking, +now);
+    if (state === "finished") return <Badge>{t("Finalizada")}</Badge>;
+    if (state === "ongoing") return <Badge variant="success">{t("En curso")}</Badge>;
     return <Badge variant="accent">{t("Próxima")}</Badge>;
   };
   const schedule = (booking: AdminBooking) => {
@@ -121,6 +139,21 @@ export default function BookingOverview({ bookings, loading, canCreate, onCreate
       <div><h2 className="font-heading text-xl font-semibold">{t("Reservas confirmadas")}</h2><p className="mt-1 text-sm text-muted">{t("Supervisa y edita las franjas horarias reservadas.")}</p></div>
       <Button type="button" onClick={onCreate} disabled={loading || !canCreate} className="min-h-11"><Plus size={16} aria-hidden="true" />{t("Nueva reserva")}</Button>
     </div>
+    <div role="group" aria-label={t("Estado de la reserva")} className="flex flex-wrap gap-2">
+      {bookingTabs.map(({ id, label }) => (
+        <button
+          key={id}
+          type="button"
+          aria-pressed={tab === id}
+          onClick={() => setTab(id)}
+          className={`min-h-10 rounded-xl border px-3 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-accent ${tab === id
+            ? "border-accent bg-accent-soft text-ink" : "border-line bg-surface text-muted hover:text-ink"}`}
+        >
+          {t(label)}
+          {!loading && now && <span className="ml-1.5 tabular-nums">{grouped[id].length}</span>}
+        </button>
+      ))}
+    </div>
     <div className="space-y-4 rounded-2xl border border-line bg-surface p-4 sm:p-5">
       <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
         <div role="group" aria-label={t("Filtrar por fecha")} className="flex flex-wrap gap-2">
@@ -139,15 +172,15 @@ export default function BookingOverview({ bookings, loading, canCreate, onCreate
         {invalidRange && <p role="alert" className="w-full text-sm text-danger">{t("La fecha final debe ser igual o posterior a la inicial.")}</p>}
       </div>}
       <div className="flex flex-wrap justify-between gap-2 border-t border-line pt-3 text-xs text-muted">
-        <p role="status">{loading ? t("Cargando reservas...") : t("Mostrando {count} de {total} reservas").replace("{count}", String(filtered.length)).replace("{total}", String(bookings.length))}</p>
+        <p role="status">{loading || !now ? t("Cargando reservas...") : t("Mostrando {count} de {total} reservas").replace("{count}", String(filtered.length)).replace("{total}", String(currentBookings.length))}</p>
         <p>{t("Zona horaria")}: {now ? Intl.DateTimeFormat().resolvedOptions().timeZone : "—"}</p>
       </div>
     </div>
-    {loading ? <div className="space-y-3" aria-label={t("Cargando reservas...")}><Skeleton className="h-20 w-full" /><Skeleton className="h-20 w-full" /><Skeleton className="h-20 w-full" /></div> :
-      filtered.length === 0 ? <Card className="p-10 text-center text-sm text-muted"><CalendarDays className="mx-auto mb-3" aria-hidden="true" /><p>{t(bookings.length ? "No hay reservas que coincidan con la búsqueda." : "No hay reservas confirmadas.")}</p></Card> : <>
+    {loading || !now ? <div className="space-y-3" aria-label={t("Cargando reservas...")}><Skeleton className="h-20 w-full" /><Skeleton className="h-20 w-full" /><Skeleton className="h-20 w-full" /></div> :
+      filtered.length === 0 ? <Card className="p-10 text-center text-sm text-muted"><CalendarDays className="mx-auto mb-3" aria-hidden="true" /><p>{t(currentBookings.length ? "No hay reservas que coincidan con la búsqueda." : activeTab.empty)}</p></Card> : <>
         <div className="hidden overflow-x-auto rounded-2xl border border-line bg-surface md:block">
           <table className="w-full text-left text-sm">
-            <caption className="sr-only">{t("Reservas confirmadas")}</caption>
+            <caption className="sr-only">{t(activeTab.label)}</caption>
             <thead className="border-b border-line bg-background text-xs text-muted"><tr>{["Usuario", "Espacio", "Fecha y horario", "Estado", "Total", "Acciones"].map((label) => <th key={label} scope="col" className={`px-5 py-4 font-medium ${label === "Acciones" ? "text-right" : ""}`}>{t(label)}</th>)}</tr></thead>
             <tbody className="divide-y divide-line">{filtered.map((booking) => <tr key={booking.id} className="hover:bg-background/70">
               <td className="px-5 py-5"><p className="font-semibold">{booking.user.name}</p><p className="mt-1 break-all text-xs text-muted">{booking.user.email}</p></td>
@@ -159,7 +192,7 @@ export default function BookingOverview({ bookings, loading, canCreate, onCreate
             </tr>)}</tbody>
           </table>
         </div>
-        <ul className="space-y-3 md:hidden" aria-label={t("Reservas confirmadas")}>{filtered.map((booking) => <li key={booking.id} className="rounded-2xl border border-line bg-surface p-5">
+        <ul className="space-y-3 md:hidden" aria-label={t(activeTab.label)}>{filtered.map((booking) => <li key={booking.id} className="rounded-2xl border border-line bg-surface p-5">
           <div className="flex items-start justify-between gap-2"><h3 className="font-semibold">{booking.user.name}</h3>{status(booking)}</div>
           <p className="mt-1 break-all text-xs text-muted">{booking.user.email}</p>
           <p className="mt-4 text-sm font-semibold">{booking.workspace.name}</p>
