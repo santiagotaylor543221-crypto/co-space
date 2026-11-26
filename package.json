@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test:auth": "node --import tsx tests/auth.test.mjs",
     "test:workspaces": "node tests/workspaces.test.mjs",
     "seed": "prisma db seed",
     "postinstall": "prisma generate"
