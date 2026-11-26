@@ -128,6 +128,8 @@ DIRECT_URL="postgresql://USER:PASSWORD@RDS_ENDPOINT:5432/DATABASE?schema=public&
 JWT_ACCESS_SECRET="your-production-access-secret"
 JWT_REFRESH_SECRET="your-production-refresh-secret"
 AUTH_ORIGIN=https://cospace.san.coderhivex.com
+AWS_REGION=us-east-2
+AWS_S3_BUCKET=nombre-del-bucket-privado
 NODE_ENV=production
 Este archivo no debe incluirse en Git. Restringe sus permisos con chmod 600 .env.production. sslmode=require cifra el tráfico, pero no sustituye la verificación completa del certificado del servidor.
 Docker Compose de producción
@@ -255,23 +257,12 @@ La sección Espacios permite buscar, filtrar por estado/tipo, ordenar y crear o 
 
 El formulario incluye ilustraciones y subida de JPG, PNG o WebP (máximo 5 MB y 25 megapíxeles). El servidor valida el contenido, elimina metadatos al recodificar y guarda WebP de hasta 1600 × 1200. La subida requiere sesión ADMIN. Las fotografías se sirven públicamente para mostrarlas en el catálogo.
 
-En desarrollo, las fotos se guardan en `data/workspace-images`, excluido de Git y de la imagen Docker. La variable `WORKSPACE_UPLOAD_DIR` permite cambiar la carpeta. El Compose local monta un volumen persistente.
+Configura `AWS_REGION` con la región del bucket y `AWS_S3_BUCKET` con su nombre. En producción, el SDK obtiene credenciales temporales del rol IAM de EC2. Las variables son de servidor y el bucket permanece privado.
 
-En el Compose de producción de EC2, añadir al servicio `app` y a los volúmenes de nivel superior:
+Las nuevas subidas se guardan en `originals/spaces/`. Las cinco fotos del catálogo se leen de `originals/catalog/`. Las rutas públicas de CoSpace usan una URL prefirmada internamente y transmiten el WebP desde el servidor. La URL, la firma y los errores detallados de S3 quedan fuera de la respuesta al navegador. La aplicación devuelve 404 ante un objeto inexistente confirmado por S3 y 503 ante fallos de almacenamiento. Si el rol carece de `s3:ListBucket`, S3 puede devolver 403 para un objeto inexistente. En ese caso CoSpace devuelve 503 porque S3 no permite distinguirlo de una denegación de acceso.
 
-```yaml
-services:
-  app:
-    volumes:
-      - workspace_images:/app/data/workspace-images
-volumes:
-  workspace_images:
-```
-
-El Dockerfile prepara esa carpeta para el usuario `node`. El volumen conserva las fotos al recrear el contenedor; incluirlo en las copias de seguridad. No ejecutar `docker compose down -v` si se quieren conservar. Esta configuración está pensada para una sola instancia EC2; varias réplicas necesitan un almacenamiento compartido.
-
-En Nginx, configurar `client_max_body_size 6m;` en el bloque del sitio para permitir fotos de 5 MB; el valor predeterminado de Nginx puede rechazarlas antes de llegar a la aplicación. Estos cambios requieren aplicarse al despliegue de producción; no se han ejecutado desde el repositorio.
+Las fotos de espacios ya guardadas en disco conservan su URL. Su lectura prioriza el directorio `WORKSPACE_UPLOAD_DIR`, que por defecto es `./data/workspace-images`. Conserva el volumen existente mientras haya fotos locales referenciadas. Las ilustraciones de `public/images/` siguen disponibles en sus rutas estáticas.
 
 Las imágenes no se borran automáticamente al sustituirlas o archivar un espacio. Una subida completada cuyo guardado de datos falle también puede dejar un archivo sin referencia; conservarlos evita eliminar fotos usadas y permite una limpieza posterior con comprobación de referencias.
 
-Comprobaciones de espacios y fotos, sin conexión a la base de datos: `npm run test:workspaces`.
+Ejecuta `npm run test:workspaces` para comprobar espacios y fotos con transporte y almacenamiento simulados. La suite firma URLs de prueba localmente y funciona sin base de datos ni acceso a AWS.
