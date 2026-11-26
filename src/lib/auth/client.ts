@@ -4,7 +4,15 @@ export async function withSessionLock<T>(action: () => Promise<T>): Promise<T> {
   return navigator.locks ? navigator.locks.request('cospace-session', action) : action();
 }
 
+let replacingDocument = false;
+
+export function isReplacingDocument() {
+  return replacingDocument;
+}
+
 export function replaceDocument(path: string) {
+  if (replacingDocument) return;
+  replacingDocument = true;
   document.documentElement.style.visibility = 'hidden';
   window.location.replace(path);
 }

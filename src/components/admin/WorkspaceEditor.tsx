@@ -1,6 +1,6 @@
 "use client";
 
-import { authFetch } from '@/lib/auth/client';
+import { authFetch, isReplacingDocument } from '@/lib/auth/client';
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Armchair, Users, Mic, Upload, ImagePlus } from "lucide-react";
 import Image from "next/image";
@@ -46,7 +46,9 @@ export default function WorkspaceEditor({ workspace, onClose, onSaved }: {
   }, [filePreview]);
   useEffect(() => {
     if (!dirty) return;
-    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); };
+    const warn = (event: BeforeUnloadEvent) => {
+      if (!isReplacingDocument()) event.preventDefault();
+    };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty]);
@@ -89,7 +91,7 @@ export default function WorkspaceEditor({ workspace, onClose, onSaved }: {
           uploadCache.current = { file, url: imageUrl };
         }
       }
-      const response = await fetch(workspace ? `/api/admin/workspaces/${workspace.id}` : "/api/admin/workspaces", {
+      const response = await authFetch(workspace ? `/api/admin/workspaces/${workspace.id}` : "/api/admin/workspaces", {
         method: workspace ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...parsed.data, imageUrl }),
       });
       const result = await response.json();
