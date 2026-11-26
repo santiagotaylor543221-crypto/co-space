@@ -1,5 +1,5 @@
 import { protectApi } from '@/lib/auth/api';
-import { MAX_IMAGE_BYTES, storePhoto } from "@/lib/workspace-upload";
+import { InvalidImageError, MAX_IMAGE_BYTES, storePhoto } from "@/lib/workspace-upload";
 
 export const POST = protectApi('ADMIN', async (_user, request: Request) => {
   if (!["image/jpeg", "image/png", "image/webp"].includes(request.headers.get("content-type") || "")) {
@@ -23,13 +23,21 @@ export const POST = protectApi('ADMIN', async (_user, request: Request) => {
       }
       chunks.push(value);
     }
-    if (!size) return Response.json({ error: "La foto está vacía." }, { status: 400 });
+  } catch {
+    return Response.json({ error: "No se pudo leer la foto." }, { status: 400 });
+  } finally {
+    reader.releaseLock();
+  }
+
+  if (!size) return Response.json({ error: "La foto está vacía." }, { status: 400 });
+  try {
     const imageUrl = await storePhoto(Buffer.concat(chunks));
     return Response.json({ imageUrl }, { status: 201 });
   } catch (error) {
-    if (["EACCES", "ENOSPC", "EROFS"].includes((error as NodeJS.ErrnoException).code || "")) {
-      return Response.json({ error: "No se pudo almacenar la imagen. Revisa el almacenamiento del servidor." }, { status: 503 });
+    if (error instanceof InvalidImageError) {
+      return Response.json({ error: "No se pudo procesar la foto. Usa un JPG, PNG o WebP válido de hasta 25 megapíxeles." }, { status: 400 });
     }
-    return Response.json({ error: "No se pudo procesar la foto. Usa un JPG, PNG o WebP válido de hasta 25 megapíxeles." }, { status: 400 });
-  } finally { reader.releaseLock(); }
+    console.error("Could not store a workspace image");
+    return Response.json({ error: "No se pudo almacenar la imagen. Intenta de nuevo más tarde." }, { status: 503 });
+  }
 });

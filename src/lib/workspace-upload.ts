@@ -15,31 +15,22 @@ export const imageDirectory = () =>
 export const isImageId = (id: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.webp$/.test(id);
 
-export async function normalizePhoto(bytes: Buffer) {
-  const image = sharp(bytes, {
-    limitInputPixels: 25_000_000,
-    animated: false,
-  });
+export class InvalidImageError extends Error {}
 
-  const metadata = await image.metadata();
+async function normalizePhoto(bytes: Buffer) {
+  try {
+    const image = sharp(bytes, { limitInputPixels: 25_000_000, animated: false });
+    const { format } = await image.metadata();
+    if (!format || !["jpeg", "png", "webp"].includes(format)) throw new InvalidImageError();
 
-  if (
-    !metadata.format ||
-    !["jpeg", "png", "webp"].includes(metadata.format)
-  ) {
-    throw new Error("Formato de imagen no admitido");
+    return await image
+      .rotate()
+      .resize({ width: 1600, height: 1200, fit: "inside", withoutEnlargement: true })
+      .webp({ quality: 82 })
+      .toBuffer();
+  } catch {
+    throw new InvalidImageError();
   }
-
-  return image
-    .rotate()
-    .resize({
-      width: 1600,
-      height: 1200,
-      fit: "inside",
-      withoutEnlargement: true,
-    })
-    .webp({ quality: 82 })
-    .toBuffer();
 }
 
 export async function storePhoto(bytes: Buffer) {
