@@ -1,10 +1,4 @@
-import {
-  PutObjectCommand,
-  GetObjectCommand,
-  DeleteObjectCommand,
-  HeadObjectCommand,
-} from "@aws-sdk/client-s3";
-
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { s3 } from "@/lib/s3";
 
@@ -31,15 +25,20 @@ export async function uploadImage(key: string, bytes: Buffer) {
   return key;
 }
 
-export async function getImageUrl(key: string) {
-  const command = new GetObjectCommand({
-    Bucket: getBucket(),
-    Key: key,
-  });
+export async function readImage(key: string, signal: AbortSignal) {
+  const command = new GetObjectCommand({ Bucket: getBucket(), Key: key });
+  const url = await getSignedUrl(s3, command, { expiresIn: 900 });
+  // La firma autoriza solo este GET y permanece en el servidor.
+  const result = await fetch(url, { cache: "no-store", redirect: "error", signal });
 
-  return getSignedUrl(s3, command, {
-    expiresIn: 900,
-  });
+  if (result.status === 200 && result.body) return result.body;
+  if (result.status === 404) {
+    // S3 también devuelve 404 cuando el bucket no existe.
+    if (/<Code>\s*NoSuchKey\s*<\/Code>/.test(await result.text())) return null;
+  } else {
+    await result.body?.cancel();
+  }
+  throw new Error("Object storage returned an unexpected response");
 }
 
 export async function deleteImage(key: string) {
@@ -49,28 +48,4 @@ export async function deleteImage(key: string) {
       Key: key,
     }),
   );
-}
-
-export async function imageExists(key: string): Promise<boolean> {
-  try {
-    await s3.send(
-      new HeadObjectCommand({
-        Bucket: getBucket(),
-        Key: key,
-      }),
-    );
-
-    return true;
-  } catch (error) {
-    const awsError = error as {
-      name?: string;
-      $metadata?: { httpStatusCode?: number };
-    };
-
-    if (awsError.$metadata?.httpStatusCode === 404) {
-      return false;
-    }
-
-    throw error;
-  }
 }

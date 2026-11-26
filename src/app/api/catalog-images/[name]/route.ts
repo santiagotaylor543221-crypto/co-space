@@ -1,4 +1,4 @@
-import { getImageUrl, imageExists } from "@/lib/s3-storage";
+import { imageError, serveStoredImage } from "@/lib/image-response";
 
 const allowedImages = new Set([
   "sala-duo.webp",
@@ -9,34 +9,11 @@ const allowedImages = new Set([
 ]);
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ name: string }> },
 ) {
   const { name } = await params;
+  if (!allowedImages.has(name)) return imageError(404);
 
-  if (!allowedImages.has(name)) {
-    return new Response(null, { status: 404 });
-  }
-
-  try {
-    const key = `originals/catalog/${name}`;
-
-    if (!(await imageExists(key))) {
-      return new Response(null, { status: 404 });
-    }
-
-    const signedUrl = await getImageUrl(key);
-
-    return new Response(null, {
-      status: 307,
-      headers: {
-        Location: signedUrl,
-        "Cache-Control": "no-store",
-      },
-    });
-  } catch (error) {
-    console.error("Catalog image retrieval failed:", error);
-
-    return new Response(null, { status: 503 });
-  }
+  return serveStoredImage(`originals/catalog/${name}`, request.signal);
 }

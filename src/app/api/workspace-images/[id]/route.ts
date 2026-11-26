@@ -1,47 +1,22 @@
 import { isImageId, readPhoto } from "@/lib/workspace-upload";
-import { getImageUrl, imageExists } from "@/lib/s3-storage";
+import { imageError, imageResponse, serveStoredImage } from "@/lib/image-response";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-
-  if (!isImageId(id)) {
-    return new Response(null, { status: 404 });
-  }
+  if (!isImageId(id)) return imageError(404);
 
   try {
     const photo = await readPhoto(id);
-
     if (photo) {
-      return new Response(new Uint8Array(photo), {
-        headers: {
-          "Content-Type": "image/webp",
-          "Cache-Control": "public, max-age=31536000, immutable",
-          "X-Content-Type-Options": "nosniff",
-        },
-      });
+      return imageResponse(new Uint8Array(photo), "public, max-age=31536000, immutable");
     }
-
-    const key = `originals/spaces/${id}`;
-
-    if (!(await imageExists(key))) {
-      return new Response(null, { status: 404 });
-    }
-
-    const signedUrl = await getImageUrl(key);
-
-    return new Response(null, {
-      status: 307,
-      headers: {
-        Location: signedUrl,
-        "Cache-Control": "no-store",
-      },
-    });
-  } catch (error) {
-    console.error("Workspace image retrieval failed:", error);
-
-    return new Response(null, { status: 503 });
+  } catch {
+    console.error("Could not read a local workspace image");
+    return imageError(503);
   }
+
+  return serveStoredImage(`originals/spaces/${id}`, request.signal);
 }
