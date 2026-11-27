@@ -98,12 +98,16 @@ test('rate limiter ignora cabeceras de IP sin un proxy habilitado', () => {
 
 const testUrl = process.env.AUTH_TEST_URL;
 const testDatabase = process.env.AUTH_TEST_DATABASE_URL;
+const skipIntegration = process.env.CI !== 'true' && !testUrl && !testDatabase;
 
-test('API y páginas con PostgreSQL temporal', { skip: !testUrl || !testDatabase, timeout: 120_000 }, async () => {
+test('API y páginas con PostgreSQL temporal', { skip: skipIntegration, timeout: 120_000 }, async () => {
+  assert.ok(testUrl && testDatabase, 'Define AUTH_TEST_URL y AUTH_TEST_DATABASE_URL para la prueba integrada');
   const url = new URL(testUrl);
   const database = new URL(testDatabase);
   assert.equal(url.hostname, '127.0.0.1', 'Usa un servidor local de pruebas');
   assert.equal(database.hostname, '127.0.0.1', 'Usa PostgreSQL temporal local');
+  assert.ok(['postgresql:', 'postgres:'].includes(database.protocol) && !database.searchParams.has('host'),
+    'Usa una URL PostgreSQL que se conecte directamente por loopback');
   const prisma = new PrismaClient({ datasourceUrl: testDatabase });
   const marker = randomUUID().slice(0, 8);
   const password = 'A local test password 2';
