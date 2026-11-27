@@ -266,3 +266,28 @@ Las fotos de espacios ya guardadas en disco conservan su URL. Su lectura prioriz
 Las imágenes no se borran automáticamente al sustituirlas o archivar un espacio. Una subida completada cuyo guardado de datos falle también puede dejar un archivo sin referencia; conservarlos evita eliminar fotos usadas y permite una limpieza posterior con comprobación de referencias.
 
 Ejecuta `npm run test:workspaces` para comprobar espacios y fotos con transporte y almacenamiento simulados. La suite firma URLs de prueba localmente y funciona sin base de datos ni acceso a AWS.
+
+La Lambda prepara miniaturas WebP en `thumbnails/` a partir de eventos de `originals/`. La instalación, las pruebas locales, el ZIP y la configuración de AWS se describen en la [guía de miniaturas](lambda/image-thumbnails/README.md).
+
+## Validación en GitHub Actions
+
+El job `Validate application` ejecuta ESLint, la generación y comprobación de tipos, las pruebas de almacenamiento y autenticación y la compilación de Next.js. `npm run test:auth` también cubre la renovación de sesión del editor de espacios. El job `Test thumbnail Lambda` instala las dependencias de `lambda/image-thumbnails` y ejecuta sus pruebas con Node.js 24 y S3 simulado.
+
+GitHub Actions crea un servicio `postgres:17-alpine` por ejecución. El puerto se publica en `127.0.0.1:54329`. `DATABASE_URL`, `DIRECT_URL` y `AUTH_TEST_DATABASE_URL` apuntan a ese servicio con credenciales de prueba. Prisma aplica las migraciones versionadas y Next.js arranca en `127.0.0.1:3100` con secretos JWT de prueba. En CI el caso HTTP falla si le faltan sus variables, y la suite rechaza destinos de base de datos fuera de loopback. El job de validación carece de credenciales de AWS y de permisos OIDC. [Servicios PostgreSQL en GitHub Actions](https://docs.github.com/en/actions/tutorials/use-containerized-services/create-postgresql-service-containers)
+
+La publicación en GHCR requiere que `validate` y `test-lambda` terminen correctamente. El despliegue requiere que se publique la imagen. Los jobs de publicación y despliegue solo se ejecutan tras un push a `main`. El job de despliegue usa OIDC y SSM para invocar el script de EC2, que conserva la responsabilidad del rollback.
+
+### Comprobaciones locales y en el runner
+
+- En una copia de trabajo con solo los archivos versionados se pueden ejecutar `npm run lint`, `npx next typegen`, `npx tsc --noEmit`, `npm run test:workspaces` y `npm run build`. `actionlint` con ShellCheck comprueba la sintaxis del workflow y sus scripts Bash.
+- Para reproducir la integración, inicia un PostgreSQL 17 desechable en loopback, apunta `DATABASE_URL` y `DIRECT_URL` a ese servicio y ejecuta `npx prisma migrate deploy`. Inicia `next dev` en `127.0.0.1:3100` con ambas URLs, `AUTH_ORIGIN=http://127.0.0.1:3100` y dos secretos JWT de prueba distintos. Ejecuta `CI=true npm run test:auth` con esos mismos secretos, `AUTH_TEST_URL=http://127.0.0.1:3100` y `AUTH_TEST_DATABASE_URL` igual a `DATABASE_URL`. Sin `CI=true` y sin las dos variables `AUTH_TEST_*`, la suite ejecuta únicamente los casos aislados.
+- Con Node.js 24, ejecuta `npm ci --prefix lambda/image-thumbnails` y `npm test --prefix lambda/image-thumbnails` para reproducir las pruebas de Lambda.
+- Una ejecución en GitHub Actions debe confirmar la creación y eliminación del servicio PostgreSQL y el comportamiento de los jobs dependientes ante una validación fallida. Un pull request a `main` permite comprobar los jobs `validate` y `test-lambda`. Publicación en GHCR, autenticación OIDC y la ejecución por SSM, incluido el rollback de EC2, requieren una ejecución autorizada del flujo de despliegue.
+
+### Compatibilidad de las acciones
+
+Las referencias actuales declaran Node.js 20. Los runners alojados por GitHub ejecutan las acciones JavaScript con Node.js 24 desde el retiro de Node.js 20. `actions/setup-node` configura Node.js 22 para la aplicación, igual que el Dockerfile, y Node.js 24 para Lambda. [Aviso de GitHub sobre el runtime de acciones](https://github.blog/changelog/2026-09-23-node-20-is-no-longer-available-in-github-actions/)
+
+- Para declarar Node.js 24 directamente, se pueden actualizar `checkout` y `setup-node` a `v7`, conservar las versiones de Node de cada paquete y verificar ambas cachés npm en un pull request. [Checkout](https://github.com/actions/checkout#checkout-v7) y [Setup Node.js](https://github.com/actions/setup-node#whats-new-in-v7)
+- Para el flujo de publicación y despliegue, las ramas con Node.js 24 incluyen `setup-buildx-action@v4`, `login-action@v4`, `build-push-action@v7` y `configure-aws-credentials@v6`. Conviene validarlas en un entorno de pruebas antes de actualizar las referencias del flujo de `main`. [Buildx](https://github.com/docker/setup-buildx-action/releases/tag/v4.0.0), [Docker Login](https://github.com/docker/login-action/releases/tag/v4.0.0), [Build and Push](https://github.com/docker/build-push-action/releases/tag/v7.0.0) y [credenciales de AWS](https://github.com/aws-actions/configure-aws-credentials/blob/main/CHANGELOG.md)
+- Fijar las referencias de las acciones por SHA completo y automatizar sus actualizaciones con Dependabot reduciría el riesgo asociado a etiquetas móviles. [Uso seguro de acciones](https://docs.github.com/en/actions/reference/security/secure-use#using-third-party-actions)
